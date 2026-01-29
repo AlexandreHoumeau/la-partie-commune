@@ -107,38 +107,3 @@ export function LoginForm() {
         </Form>
     );
 }
-// import { Button } from "@/components/ui/button";
-// import { Input } from "@/components/ui/input";
-// import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-// import { loginSchema } from "@/lib/validators/auth";
-// import { zodResolver } from "@hookform/resolvers/zod";
-// import { useState } from "react";
-// import { useForm } from "react-hook-form";
-
-
-// export function LoginForm() {
-//     const [loading, setLoading] = useState(false);
-//     const form = useForm({ resolver: zodResolver(loginSchema) });
-//     const supabase = createSupabaseBrowserClient();
-
-//     async function onSubmit(values: any) {
-//         setLoading(true);
-//         const { data, error } = await supabase.auth.signInWithPassword(values);
-//         console.log(data);
-//         console.log(error);
-//         setLoading(false);
-//     }
-
-
-//     return (
-//         <form
-//             onSubmit={form.handleSubmit(onSubmit)}
-//             className="w-full max-w-md space-y-4 rounded-xl border p-6"
-//         >
-//             <h1 className="text-xl font-semibold">Login</h1>
-//             <Input placeholder="Email" {...form.register("email")} />
-//             <Input type="password" placeholder="Password" {...form.register("password")} />
-//             <Button className="w-full" disabled={loading}>Login</Button>
-//         </form>
-//     );
-// }
