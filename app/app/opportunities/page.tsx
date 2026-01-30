@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { OpportunityTable } from "@/components/opportunities/OpportunityTable";
+import { getOpportunities, updateOpportunityStatus } from "@/actions/opportunity.actions";
 import { OpportunityDrawer } from "@/components/opportunities/OpportunityDrawer";
-import { getOpportunities } from "@/actions/opportunity.actions";
+import { Button } from "@/components/ui/button";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { OpportunityStatus } from "@/lib/validators/oppotunities";
+import { useEffect, useState } from "react";
+import { getColumns } from "./columns";
+import { DataTable } from "./data-table";
 
 export default function OpportunitiesPage() {
     const { profile, loading } = useUserProfile();
@@ -22,6 +24,27 @@ export default function OpportunitiesPage() {
         fetchData();
     }, []);
 
+    const handleStatusChange = async (
+        id: string,
+        status: OpportunityStatus
+    ) => {
+        // optimistic UI
+        setOpportunities((prev) =>
+            prev.map((o) =>
+                o.id === id ? { ...o, status } : o
+            )
+        );
+
+        try {
+            await updateOpportunityStatus(id, status);
+        } catch (e) {
+            console.error(e);
+            // optional rollback
+        }
+    };
+
+
+
     const handleSaved = (saved: any) => {
         setOpportunities((prev) => {
             const exists = prev.find((o) => o.id === saved.id);
@@ -36,6 +59,11 @@ export default function OpportunitiesPage() {
         return <div>Agency not found for this user</div>;
     }
 
+    const columns = getColumns({
+        onStatusChange: handleStatusChange,
+    });
+
+
     return (
         <div>
             <div className="flex justify-end mb-4">
@@ -48,15 +76,7 @@ export default function OpportunitiesPage() {
                     New Opportunity
                 </Button>
             </div>
-
-            <OpportunityTable
-                opportunities={opportunities}
-                onEdit={(opportunity) => {
-                    setEditing(opportunity);
-                    setDrawerOpen(true);
-                }}
-            />
-
+            <DataTable columns={columns} data={opportunities} />
             <OpportunityDrawer
                 userProfile={profile}
                 open={drawerOpen}
