@@ -1,5 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { OpportunityFormValues, OpportunityWithCompany } from "@/lib/validators/oppotunities";
+import { OpportunityFormValues, OpportunityStatus, OpportunityWithCompany } from "@/lib/validators/oppotunities";
 
 export async function searchCompanies(query: string) {
     if (!query) return [];
@@ -117,4 +117,21 @@ export async function updateOpportunityOrder(id: string, order: number) {
 
     if (error) throw error;
     return data;
+}
+
+
+export async function updateOpportunityStatus(
+    opportunityId: string,
+    status: OpportunityStatus
+) {
+    const supabase = await createSupabaseBrowserClient();
+
+    const { error } = await supabase
+        .from("opportunities")
+        .update({ status })
+        .eq("id", opportunityId);
+
+    if (error) {
+        throw error;
+    }
 }
