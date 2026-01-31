@@ -9,10 +9,14 @@ import { Archive, Copy, Edit, Flag, MoreVertical, Star, Trash2 } from "lucide-re
 
 type ColumnsProps = {
     onStatusChange: (id: string, status: OpportunityStatus) => void;
+    onDeleteOpportunities: (ids: string[]) => void;
+    editOpportunity: (opportunity: OpportunityWithCompany) => void;
 };
 
 export const getColumns = ({
     onStatusChange,
+    onDeleteOpportunities,
+    editOpportunity
 }: ColumnsProps): ColumnDef<OpportunityWithCompany>[] => [
 
         {
@@ -96,7 +100,7 @@ export const getColumns = ({
         {
             id: "actions",
             cell: ({ row }) => {
-                const payment = row.original
+                const opportunity = row.original
 
                 return (
                     <DropdownMenu>
@@ -106,7 +110,7 @@ export const getColumns = ({
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => editOpportunity(opportunity)}>
                                 <Edit />
                                 Edit
                             </DropdownMenuItem>
@@ -128,7 +132,7 @@ export const getColumns = ({
                                 <Archive />
                                 Archive
                             </DropdownMenuItem>
-                            <DropdownMenuItem variant="destructive">
+                            <DropdownMenuItem variant="destructive" onClick={() => onDeleteOpportunities([opportunity.id])}>
                                 <Trash2 />
                                 Delete
                             </DropdownMenuItem>
