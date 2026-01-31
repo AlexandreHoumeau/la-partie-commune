@@ -8,9 +8,9 @@ import { Button } from "@/components/ui/button";
 import {
     Drawer,
     DrawerContent,
+    DrawerFooter,
     DrawerHeader,
     DrawerTitle,
-    DrawerFooter,
 } from "@/components/ui/drawer";
 import {
     Form,
@@ -21,7 +21,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Select,
     SelectContent,
@@ -30,15 +30,15 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 
-import { mapContactViaLabel, mapOpportunityStatusLabel, OpportunityFormValues, opportunitySchema } from "@/lib/validators/oppotunities";
 import { createOpportunity, updateOpportunity } from "@/actions/opportunity.actions";
+import { mapContactViaLabel, mapOpportunityStatusLabel, mapOpportunityWithCompanyToFormValues, OpportunityFormValues, opportunitySchema, OpportunityWithCompany } from "@/lib/validators/oppotunities";
 
 interface OpportunityDrawerProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    initialData?: any;
+    initialData?: OpportunityWithCompany | null;
     onSaved: (opportunity: any) => void;
     userProfile: { agency_id: string };
 }
@@ -70,7 +70,7 @@ export function OpportunityDrawer({
 
     useEffect(() => {
         if (initialData) {
-            form.reset(initialData);
+            form.reset(mapOpportunityWithCompanyToFormValues(initialData));
         } else {
             form.reset();
         }
@@ -97,7 +97,7 @@ export function OpportunityDrawer({
             setError("Une erreur est survenue. Réessayez.");
         }
     };
-
+ 
     return (
         <Drawer open={open} onOpenChange={onOpenChange} direction="right">
             <DrawerContent className="flex flex-col h-full">
