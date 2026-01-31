@@ -23,6 +23,7 @@ export async function getOpportunities(): Promise<OpportunityWithCompany[]> {
         *,
         company:companies (*)
         `)
+
     if (error) throw error;
     return data;
 }
@@ -36,8 +37,9 @@ export async function createOpportunity(values: OpportunityFormValues, agencyId?
         .from("companies")
         .insert([
             {
+                agency_id: agencyId,
                 name: values.company_name,
-                adress: values.company_address || null,
+                address: values.company_address || null,
                 email: values.company_email || null,
                 phone_number: values.company_phone || null,
                 website: values.company_website || null,
@@ -78,21 +80,63 @@ export async function createOpportunity(values: OpportunityFormValues, agencyId?
         // Note: if you want atomic array update, you can also handle in a transaction
     }
 
-    return opportunity;
+    return { ...opportunity, company };
 }
 
-export async function updateOpportunity(id: string, payload: any) {
+export async function updateOpportunity(
+    id: string,
+    payload: OpportunityFormValues
+) {
     const supabase = createSupabaseBrowserClient();
-    const { data, error } = await supabase
+    const {
+        company_name,
+        company_address,
+        company_email,
+        company_phone,
+        company_website,
+        company_sector,
+        ...opportunityPayload
+    } = payload;
+
+    // 1. Get company_id from opportunity
+    const { data: existingOppotunity, error: fetchError } = await supabase
         .from("opportunities")
-        .update(payload)
+        .select("company_id")
+        .eq("id", id)
+        .single();
+
+    if (fetchError) throw fetchError;
+
+    // 2. Update company (payload ALWAYS has company data)
+    const { data: companyData, error: companyUpdateError } = await supabase
+        .from("companies")
+        .update({
+            name: company_name,
+            address: company_address,
+            email: company_email,
+            phone_number: company_phone,
+            website: company_website,
+            business_sector: company_sector,
+        })
+        .eq("id", existingOppotunity.company_id)
+        .select()
+        .single();
+
+    if (companyUpdateError) throw companyUpdateError;
+
+    // 4. Update opportunity ONLY with valid columns
+    const { data: opportunity, error } = await supabase
+        .from("opportunities")
+        .update(opportunityPayload)
         .eq("id", id)
         .select()
         .single();
 
     if (error) throw error;
-    return data;
+
+    return { ...opportunity, company: companyData };
 }
+
 
 export async function deleteOpportunities(ids: string[]) {
     const supabase = createSupabaseBrowserClient();
