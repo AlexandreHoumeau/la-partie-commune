@@ -1,10 +1,10 @@
 "use client";
 
-import { getOpportunities, updateOpportunityStatus } from "@/actions/opportunity.actions";
+import { deleteOpportunities, getOpportunities, updateOpportunityStatus } from "@/actions/opportunity.actions";
 import { OpportunityDrawer } from "@/components/opportunities/OpportunityDrawer";
 import { Button } from "@/components/ui/button";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { OpportunityStatus } from "@/lib/validators/oppotunities";
+import { OpportunityStatus, OpportunityWithCompany } from "@/lib/validators/oppotunities";
 import { useEffect, useState } from "react";
 import { getColumns } from "./columns";
 import { DataTable } from "./data-table";
@@ -61,6 +61,14 @@ export default function OpportunitiesPage() {
 
     const columns = getColumns({
         onStatusChange: handleStatusChange,
+        editOpportunity: (opportunity: OpportunityWithCompany) => {
+            setEditing(opportunity);
+            setDrawerOpen(true);
+        },
+        onDeleteOpportunities: (ids: string[]) => {
+            deleteOpportunities(ids);
+            setOpportunities((prev) => prev.filter((o) => !ids.includes(o.id)));
+        }
     });
 
 
