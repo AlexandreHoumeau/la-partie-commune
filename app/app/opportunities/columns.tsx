@@ -5,34 +5,63 @@ import { ContactVia, mapContactViaLabel, mapOpportunityStatusLabel, OpportunityS
 import { CONTACT_COLORS, STATUS_COLORS } from "@/utils/general";
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { Archive, Copy, Edit, Flag, MoreVertical, Star, Trash2 } from "lucide-react";
+import { Edit, MoreVertical, Star, Trash2 } from "lucide-react";
+import { Copy } from 'lucide-react';
+import { toast } from "sonner";
+import { ArrowUpDown } from "lucide-react"
 
 type ColumnsProps = {
     onStatusChange: (id: string, status: OpportunityStatus) => void;
     onDeleteOpportunities: (ids: string[]) => void;
     editOpportunity: (opportunity: OpportunityWithCompany) => void;
+    onFavoriteChange: (id: string, isFavorite: boolean) => void;
 };
 
 export const getColumns = ({
     onStatusChange,
     onDeleteOpportunities,
-    editOpportunity
+    editOpportunity,
+    onFavoriteChange
 }: ColumnsProps): ColumnDef<OpportunityWithCompany>[] => [
-
         {
             header: "Nom",
             accessorKey: "company.name",
         },
         {
             accessorKey: "company.email",
-            header: "Email",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        className="cursor-pointer"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Email
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const email = row.original.company?.email
+                return email ? <span className="font-semibold cursor-pointer flex gap-2 items-center" onClick={async () => {
+                    await navigator.clipboard.writeText(email);
+                    toast.success("Copié dans le presse-papiers", { position: "top-right" });
+                }}
+
+                >{email}     <Copy size={14} />
+                </span> : null;
+            }
         },
         {
-            accessorKey: "company.phone",
+            accessorKey: "company.phone_number",
             header: "Phone",
         },
         {
             accessorKey: "status",
+            filterFn: (row, columnId, filterValue: OpportunityStatus[]) => {
+                if (!Array.isArray(filterValue)) return true;
+                return filterValue.includes(row.getValue(columnId));
+            },
             header: "Status",
             cell: ({ row }) => {
                 const status = row.getValue<OpportunityStatus>("status");
@@ -114,24 +143,11 @@ export const getColumns = ({
                                 <Edit />
                                 Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <Copy />
-                                Duplicate
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onFavoriteChange(opportunity.id, !opportunity.is_favorite)}>
                                 <Star />
-                                Favorite
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <Flag />
-                                Report
+                                {opportunity.is_favorite ? "Unfavorite" : "Favorite"}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
-                                <Archive />
-                                Archive
-                            </DropdownMenuItem>
                             <DropdownMenuItem variant="destructive" onClick={() => onDeleteOpportunities([opportunity.id])}>
                                 <Trash2 />
                                 Delete
@@ -141,4 +157,11 @@ export const getColumns = ({
                 )
             },
         },
+        // {
+        //     id: "is_favorite",
+        //     cell: ({ row }) => {
+        //         const isFavorite = row.getValue("is_favorite");
+        //         return isFavorite ? <Star className="fill-yellow-500" /> : <Star className="fill-gray-300" />;
+        //     },
+        // }
     ]
