@@ -69,6 +69,7 @@ export type Opportunity = {
 
   created_at: string;
   updated_at: string;
+  is_favorite: boolean;
 };
 
 export type OpportunityWithCompany = Opportunity & {

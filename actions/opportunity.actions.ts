@@ -179,3 +179,19 @@ export async function updateOpportunityStatus(
         throw error;
     }
 }
+
+export async function updateOpportunityFavorite(
+    opportunityId: string,
+    is_favorite: boolean
+) {
+    const supabase = createSupabaseBrowserClient();
+
+    const { error } = await supabase
+        .from("opportunities")
+        .update({ is_favorite })
+        .eq("id", opportunityId);
+
+    if (error) {
+        throw error;
+    }
+}
