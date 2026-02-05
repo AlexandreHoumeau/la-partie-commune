@@ -127,7 +127,7 @@ export default function OpportunitiesPage() {
                 const exists = prev.some((o) => o.id === saved.id);
                 return exists
                     ? prev.map((o) => (o.id === saved.id ? saved : o))
-                    : [...prev, saved];
+                    : [saved, ...prev];
             });
         },
         []
@@ -168,9 +168,6 @@ export default function OpportunitiesPage() {
                         "lost",
                     ] as OpportunityStatus[]).map((status) => {
                         const count = statusCounts[status];
-                        const isExcluded = excludedStatuses.includes(status);
-                        const isDisabled = count === 0;
-
                         return (
                             <Badge
                                 key={status}
