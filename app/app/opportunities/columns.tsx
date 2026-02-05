@@ -9,6 +9,7 @@ import { Edit, MoreVertical, Star, Trash2 } from "lucide-react";
 import { Copy } from 'lucide-react';
 import { toast } from "sonner";
 import { ArrowUpDown } from "lucide-react"
+import Link from "next/link";
 
 type ColumnsProps = {
     onStatusChange: (id: string, status: OpportunityStatus) => void;
@@ -26,6 +27,12 @@ export const getColumns = ({
         {
             header: "Nom",
             accessorKey: "company.name",
+            cell: ({ row }) => {
+                const opportunity = row.original
+                const companyName: string = row.getValue("company_name");
+                return opportunity.company?.website ? <Link target="_blank" href={opportunity.company?.website} className="font-medium text-wrap underline">{companyName}</Link> : <div className="font-medium text-wrap">{companyName}</div>
+
+            }
         },
         {
             accessorKey: "company.email",
@@ -46,10 +53,7 @@ export const getColumns = ({
                 return email ? <span className="font-semibold cursor-pointer flex gap-2 items-center" onClick={async () => {
                     await navigator.clipboard.writeText(email);
                     toast.success("Copié dans le presse-papiers", { position: "top-right" });
-                }}
-
-                >{email}     <Copy size={14} />
-                </span> : null;
+                }}>{email}<Copy size={14} /></span> : null;
             }
         },
         {
@@ -70,7 +74,7 @@ export const getColumns = ({
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Badge className={STATUS_COLORS[status]}>
+                            <Badge className={`${STATUS_COLORS[status]} cursor-pointer`}>
                                 {mapOpportunityStatusLabel[status]}
                             </Badge>
                         </DropdownMenuTrigger>
@@ -83,7 +87,7 @@ export const getColumns = ({
                                         onStatusChange(id, key as OpportunityStatus)
                                     }
                                 >
-                                    <Badge className={STATUS_COLORS[key as OpportunityStatus]}>
+                                    <Badge className={`${STATUS_COLORS[key as OpportunityStatus]} cursor-pointer`}>
                                         {label}
                                     </Badge>
                                 </DropdownMenuItem>
@@ -114,7 +118,19 @@ export const getColumns = ({
         },
         {
             accessorKey: "created_at",
-            header: "Created At",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        className="cursor-pointer"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Crée le
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+
             cell: ({ row }) => {
                 const date = new Date(row.getValue("created_at"));
                 const formattedDate = dayjs(date).format("DD MMM YYYY");
@@ -125,6 +141,11 @@ export const getColumns = ({
         {
             accessorKey: "description",
             header: "Description",
+            cell: ({ row }) => {
+                const descirption: string = row.getValue("description");
+                return <div className="font-medium text-wrap">{descirption}</div>
+
+            }
         },
         {
             id: "actions",
@@ -143,6 +164,16 @@ export const getColumns = ({
                                 <Edit />
                                 Edit
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={async () => {
+                                const formattedString = `Nom: ${opportunity.company?.name}; Webiste: ${opportunity.company?.website}; Email: ${opportunity.company?.email}; PhoneNumber: ${opportunity.company?.phone_number}; Description: ${opportunity.description}`
+
+                                await navigator.clipboard.writeText(JSON.stringify(formattedString));
+                                toast.success("Copié dans l'opportunité presse-papiers", { position: "top-right" });
+
+                            }}>
+                                <Copy />
+                                Copy
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => onFavoriteChange(opportunity.id, !opportunity.is_favorite)}>
                                 <Star />
                                 {opportunity.is_favorite ? "Unfavorite" : "Favorite"}
@@ -156,12 +187,5 @@ export const getColumns = ({
                     </DropdownMenu>
                 )
             },
-        },
-        // {
-        //     id: "is_favorite",
-        //     cell: ({ row }) => {
-        //         const isFavorite = row.getValue("is_favorite");
-        //         return isFavorite ? <Star className="fill-yellow-500" /> : <Star className="fill-gray-300" />;
-        //     },
-        // }
+        }
     ]
