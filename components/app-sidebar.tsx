@@ -51,7 +51,7 @@ export function AppSidebar() {
     const pathname = usePathname()
 
     return (
-        <aside className="flex h-screen w-64 flex-col border-r bg-neutral-50">
+        <aside className="fixed left-0 top-0 h-screen w-64 border-r bg-neutral-50 text-2xl font-bold overflow-y-auto">
             {/* Brand */}
             <div className="flex h-16 items-center px-6 text-lg font-semibold">
                 Atelier
