@@ -23,6 +23,7 @@ export async function getOpportunities(): Promise<OpportunityWithCompany[]> {
         *,
         company:companies (*)
         `)
+        .order('created_at', { ascending: false })
 
     if (error) throw error;
     return data;
