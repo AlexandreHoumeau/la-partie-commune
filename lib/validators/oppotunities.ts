@@ -22,7 +22,7 @@ export const opportunitySchema = z.object({
     "lost",
   ]),
 
-  contact_via: z.enum(["email", "phone", "IRL"]),
+  contact_via: z.enum(["email", "phone", "IRL", "instagram", "linkedin"]),
 });
 
 export type OpportunityFormValues = z.infer<typeof opportunitySchema>;
@@ -51,9 +51,11 @@ export const mapContactViaLabel: Record<ContactVia, string> = {
   email: "Email",
   phone: "Téléphone",
   IRL: "En personne",
+  instagram: "Instagram",
+  linkedin: "linkedin"
 };
 
-export type ContactVia = "email" | "phone" | "IRL";
+export type ContactVia = "email" | "phone" | "IRL" | "instagram" | "linkedin";
 
 
 export type Opportunity = {
