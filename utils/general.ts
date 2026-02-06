@@ -14,4 +14,6 @@ export const CONTACT_COLORS: Record<ContactVia, string> = {
     email: "bg-sky-100 text-sky-800",
     phone: "bg-purple-100 text-purple-800",
     IRL: "bg-emerald-100 text-emerald-800",
+    instagram: "bg-lime-100 text-lime-800",
+    linkedin: "bg-indigo-100 text-indigo-800",
 };
