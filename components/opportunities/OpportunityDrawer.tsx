@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { createOpportunity, updateOpportunity } from "@/actions/opportunity.actions";
 import { mapContactViaLabel, mapOpportunityStatusLabel, mapOpportunityWithCompanyToFormValues, OpportunityFormValues, opportunitySchema, OpportunityWithCompany } from "@/lib/validators/oppotunities";
+import { cp } from "fs";
 
 interface OpportunityDrawerProps {
     open: boolean;
@@ -51,7 +52,6 @@ export function OpportunityDrawer({
     userProfile
 }: OpportunityDrawerProps) {
     const [error, setError] = useState<string | null>(null);
-
     const form = useForm<OpportunityFormValues>({
         resolver: zodResolver(opportunitySchema),
         defaultValues: {
