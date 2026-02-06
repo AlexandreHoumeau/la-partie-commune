@@ -92,7 +92,6 @@ export function DataTable<TData, TValue>({
   /* ---------------------- status filter sync ---------------------- */
   React.useEffect(() => {
     const statusColumn = table.getColumn("status");
-    console.log(visibleStatuses)
     if (!statusColumn) return;
 
     // If all statuses are selected → remove filter
