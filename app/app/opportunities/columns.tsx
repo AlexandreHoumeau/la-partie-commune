@@ -165,7 +165,7 @@ export const getColumns = ({
                                 Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={async () => {
-                                const formattedString = `Nom: ${opportunity.company?.name}; Webiste: ${opportunity.company?.website}; Email: ${opportunity.company?.email}; PhoneNumber: ${opportunity.company?.phone_number}; Description: ${opportunity.description}`
+                                const formattedString = `Nom: ${opportunity.company?.name}; Webiste: ${opportunity.company?.website}; Email: ${opportunity.company?.email}; PhoneNumber: ${opportunity.company?.phone_number}; Description: ${opportunity.description}; Secteur d'activité: ${opportunity.company?.business_sector}`
 
                                 await navigator.clipboard.writeText(JSON.stringify(formattedString));
                                 toast.success("Copié dans l'opportunité presse-papiers", { position: "top-right" });
