@@ -31,8 +31,6 @@ export async function getOpportunities(): Promise<OpportunityWithCompany[]> {
 
 export async function createOpportunity(values: OpportunityFormValues, agencyId?: string) {
     const supabase = createSupabaseBrowserClient();
-    console.log(values.status);
-    console.log(values.contact_via);
     // 1️⃣ Create company
     const { data: company, error: companyError } = await supabase
         .from("companies")
