@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { generateSlug, getUniqueSlug } from "@/lib/utils";
 import { OpportunityFormValues, OpportunityStatus, OpportunityWithCompany } from "@/lib/validators/oppotunities";
 
 export async function searchCompanies(query: string) {
@@ -12,6 +13,11 @@ export async function searchCompanies(query: string) {
 
     if (error) throw error;
     return data || [];
+}
+
+export async function getOpportunityBySlug(slug: string): Promise<OpportunityWithCompany | null> {
+
+    return null
 }
 
 
@@ -31,6 +37,8 @@ export async function getOpportunities(): Promise<OpportunityWithCompany[]> {
 
 export async function createOpportunity(values: OpportunityFormValues, agencyId?: string) {
     const supabase = createSupabaseBrowserClient();
+    const slug = await getUniqueSlug(supabase, generateSlug(values.name));
+
     // 1️⃣ Create company
     const { data: company, error: companyError } = await supabase
         .from("companies")
@@ -43,6 +51,7 @@ export async function createOpportunity(values: OpportunityFormValues, agencyId?
                 phone_number: values.company_phone || null,
                 website: values.company_website || null,
                 business_sector: values.company_sector || null,
+                slug
             },
         ])
         .select()
