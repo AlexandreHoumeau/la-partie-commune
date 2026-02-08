@@ -19,7 +19,6 @@ export async function searchCompanies(query: string) {
 export async function getOpportunities(): Promise<OpportunityWithCompany[]> {
     
     const supabase = createSupabaseBrowserClient();
-    console.log(await supabase.auth.getUser())
     const { data, error } = await supabase
         .from("opportunities")
         .select(`
