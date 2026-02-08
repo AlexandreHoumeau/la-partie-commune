@@ -1,33 +1,38 @@
-import { getOpportunityBySlug } from "@/actions/opportunity.actions";
-import { notFound } from "next/navigation";
-
-interface OpportunityPageProps {
-    params: {
-        slug: string;
-    };
-}
-
-interface Opportunity {
-    id: string;
-    slug: string;
-    title: string;
-    description: string;
-    // Add other fields as needed
-}
+import OpportunityHeader from "./_components/opportunity-header"
+import OpportunityMetadata from "./_components/opportunity-metadata"
+import OpportunityTimeline from "./_components/opportunity-timeline"
+import OpportunityEmails from "./_components/opportunity-emails"
+import OpportunityActions from "./_components/opportunity-actions"
+import { getOpportunityBySlug } from "@/actions/opportunity.server"
 
 export default async function OpportunityPage({
     params,
-}: OpportunityPageProps) {
-    const opportunity = await getOpportunityBySlug(params.slug);
-
+}: {
+    params: { slug: string }
+}) {
+    const { slug } = await params
+    const opportunity = await getOpportunityBySlug(slug)
     if (!opportunity) {
-        notFound();
+        return <div>Opportunity not found</div>
     }
 
     return (
-        <main className="container mx-auto py-8 px-4">
-            <h1 className="text-3xl font-bold mb-4">{opportunity.name}</h1>
-            <p className="text-gray-600">{opportunity.description}</p>
-        </main>
-    );
+        <div className="flex flex-col gap-6">
+            <OpportunityHeader opportunity={opportunity} />
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Colonne gauche */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                    <OpportunityTimeline opportunityId={opportunity.id} />
+                    <OpportunityEmails opportunityId={opportunity.id} />
+                </div>
+
+                {/* Colonne droite */}
+                <div className="flex flex-col gap-6">
+                    <OpportunityMetadata opportunity={opportunity} />
+                    <OpportunityActions opportunity={opportunity} />
+                </div>
+            </div>
+        </div>
+    )
 }
