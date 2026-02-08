@@ -5,7 +5,7 @@ import {
     getOpportunities,
     updateOpportunityFavorite,
     updateOpportunityStatus,
-} from "@/actions/opportunity.actions";
+} from "@/actions/opportunity.client";
 import { OpportunityDrawer } from "@/components/opportunities/OpportunityDrawer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -182,14 +182,16 @@ export default function OpportunitiesPage() {
                         );
                     })}
                 </div>
-                <Button
-                    onClick={() => {
-                        setEditing(null);
-                        setDrawerOpen(true);
-                    }}
-                >
-                    Nouvelle opportunité
-                </Button>
+                <div className="gap-4 flex ">
+                    <Button
+                        onClick={() => {
+                            setEditing(null);
+                            setDrawerOpen(true);
+                        }}
+                    >
+                        Nouvelle opportunité
+                    </Button>
+                </div>
             </div>
             <DataTable columns={columns} data={filteredOpportunities} />
             <OpportunityDrawer

@@ -32,7 +32,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 
-import { createOpportunity, updateOpportunity } from "@/actions/opportunity.actions";
+import { createOpportunity, updateOpportunity } from "@/actions/opportunity.client";
 import { mapContactViaLabel, mapOpportunityStatusLabel, mapOpportunityWithCompanyToFormValues, OpportunityFormValues, opportunitySchema, OpportunityWithCompany } from "@/lib/validators/oppotunities";
 import { cp } from "fs";
 
