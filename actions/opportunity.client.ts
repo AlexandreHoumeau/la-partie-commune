@@ -15,14 +15,11 @@ export async function searchCompanies(query: string) {
     return data || [];
 }
 
-export async function getOpportunityBySlug(slug: string): Promise<OpportunityWithCompany | null> {
-
-    return null
-}
-
 
 export async function getOpportunities(): Promise<OpportunityWithCompany[]> {
+    
     const supabase = createSupabaseBrowserClient();
+    console.log(await supabase.auth.getUser())
     const { data, error } = await supabase
         .from("opportunities")
         .select(`
@@ -51,7 +48,6 @@ export async function createOpportunity(values: OpportunityFormValues, agencyId?
                 phone_number: values.company_phone || null,
                 website: values.company_website || null,
                 business_sector: values.company_sector || null,
-                slug
             },
         ])
         .select()
@@ -70,6 +66,7 @@ export async function createOpportunity(values: OpportunityFormValues, agencyId?
                 status: values.status,
                 contact_via: values.contact_via,
                 company_id: company.id,
+                slug
             },
         ])
         .select()
