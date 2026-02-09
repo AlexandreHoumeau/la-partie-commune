@@ -9,7 +9,7 @@ export async function getOpportunityBySlug(slug: string): Promise<OpportunityWit
             *,
             company:companies (*)
         `)
-        .eq("id", "0d12c4bc-f47c-4e08-9ec8-73247479d70b")
+        .eq("slug", slug)
         .maybeSingle()
 
 
