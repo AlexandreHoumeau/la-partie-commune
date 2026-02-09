@@ -29,8 +29,7 @@ export const getColumns = ({
             accessorKey: "company.name",
             cell: ({ row }) => {
                 const opportunity = row.original
-                const companyName: string = row.getValue("company_name");
-                return opportunity.company?.website ? <Link target="_blank" href={opportunity.company?.website} className="font-medium text-wrap underline">{companyName}</Link> : <div className="font-medium text-wrap">{companyName}</div>
+                return opportunity.company?.website ? <Link href={`opportunities/${opportunity.slug}`} className="font-medium text-wrap underline cursor-pointer">{opportunity.company.name}</Link> : <div className="font-medium text-wrap">{opportunity.company?.name}</div>
 
             }
         },

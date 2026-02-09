@@ -1,17 +1,15 @@
-// opportunity-header.tsx
-import { Badge } from "@/components/ui/badge"
+"use client"
+import { Button } from "@/components/ui/button";
+import { OpportunityWithCompany } from "@/lib/validators/oppotunities"
+import { ChevronLeft } from 'lucide-react';
 
-export default function OpportunityHeader({ opportunity }: any) {
+export default function OpportunityHeader({ opportunity }: { opportunity: OpportunityWithCompany }) {
   return (
-    <div className="flex items-center justify-between">
-      <div>
-        <h1 className="text-2xl font-semibold">{opportunity.company_name}</h1>
-        <p className="text-sm text-muted-foreground">
-          {opportunity.contact_name} · {opportunity.email}
-        </p>
-      </div>
-
-      <Badge variant="outline">{opportunity.status}</Badge>
+    <div className="flex items-center justify-start bg-white p-6">
+      <Button variant="ghost" className="p-0 mr-2" onClick={() => window.history.back()}>
+        <ChevronLeft className=" text-gray-500 cursor-pointer" />
+      </Button>
+      <h1 className="text-xl font-semibold">{opportunity.company?.name}</h1>
     </div>
   )
 }
