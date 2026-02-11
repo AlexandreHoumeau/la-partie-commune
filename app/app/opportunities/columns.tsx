@@ -29,7 +29,7 @@ export const getColumns = ({
             accessorKey: "company.name",
             cell: ({ row }) => {
                 const opportunity = row.original
-                return opportunity.company?.website ? <Link href={`opportunities/${opportunity.slug}`} className="font-medium text-wrap underline cursor-pointer">{opportunity.company.name}</Link> : <div className="font-medium text-wrap">{opportunity.company?.name}</div>
+                return <Link href={`opportunities/${opportunity.slug}`} className="font-medium text-wrap underline cursor-pointer">{opportunity.company?.name!}</Link>
 
             }
         },
@@ -100,6 +100,10 @@ export const getColumns = ({
         {
             accessorKey: "contact_via",
             header: "Contact Via",
+            filterFn: (row, columnId, value: ContactVia[]) => {
+                if (!value || value.length === 0) return true;
+                return value.includes(row.getValue(columnId));
+            },
             cell: ({ row }) => {
                 const contact_via: ContactVia = row.getValue("contact_via");
                 const label = mapContactViaLabel[contact_via];
@@ -164,8 +168,7 @@ export const getColumns = ({
                                 Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={async () => {
-                                const formattedString = `Nom: ${opportunity.company?.name}; Webiste: ${opportunity.company?.website}; Email: ${opportunity.company?.email}; PhoneNumber: ${opportunity.company?.phone_number}; Description: ${opportunity.description}; Secteur d'activité: ${opportunity.company?.business_sector}`
-
+                                const formattedString = `Nom: ${opportunity.company?.name}; Webiste: ${opportunity.company?.website}; Email: ${opportunity.company?.email}; PhoneNumber: ${opportunity.company?.phone_number}; Description: ${opportunity.description}; Secteur d'activité: ${opportunity.company?.business_sector}; A contacter via: ${opportunity.contact_via}; Statut: ${opportunity.status}`;
                                 await navigator.clipboard.writeText(JSON.stringify(formattedString));
                                 toast.success("Copié dans l'opportunité presse-papiers", { position: "top-right" });
 

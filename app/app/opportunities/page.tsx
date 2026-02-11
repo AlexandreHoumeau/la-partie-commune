@@ -1,206 +1,188 @@
 "use client";
-
-import {
-    deleteOpportunities,
-    getOpportunities,
-    updateOpportunityFavorite,
-    updateOpportunityStatus,
-} from "@/actions/opportunity.client";
-import { OpportunityDrawer } from "@/components/opportunities/OpportunityDrawer";
+import { deleteOpportunities, updateOpportunityFavorite, updateOpportunityStatus } from "@/actions/opportunity.client";
+import { OpportunityDialog } from "@/components/opportunities/OpportunityDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useOpportunities } from "@/hooks/useOpportunities";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import { useLoadingBar } from "@/hooks/useLoadingBar";
 import {
-    mapOpportunityStatusLabel,
-    OpportunityStatus,
-    OpportunityWithCompany,
+	mapOpportunityStatusLabel,
+	OpportunityStatus,
+	OpportunityWithCompany,
 } from "@/lib/validators/oppotunities";
 import { STATUS_COLORS } from "@/utils/general";
-import { useCallback, useEffect, useState } from "react";
-import { getColumns } from "./columns";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { DataTable } from "./data-table";
+import { getColumns } from "./columns";
 
 export default function OpportunitiesPage() {
-    const { profile, loading } = useUserProfile();
+	const { profile } = useUserProfile();
+	const queryClient = useQueryClient();
+	const [dialogOpen, setDialogOpen] = useState(false);
+	const [editing, setEditing] = useState<OpportunityWithCompany | null>(null);
 
-    const [opportunities, setOpportunities] = useState<
-        OpportunityWithCompany[]
-    >([]);
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const [editing, setEditing] = useState<OpportunityWithCompany | null>(null);
+	// Fetch opportunities with URL-driven state
+	const {
+		opportunities,
+		total,
+		page,
+		pageSize,
+		search,
+		statuses,
+		contactVia,
+		isLoading,
+		statusCounts,
+		updateURL,
+	} = useOpportunities({
+		pageSize: 10,
+		agencyId: profile?.agency_id || "",
+		enabled: !!profile?.agency_id,
+	});
 
-    // ⬇️ excluded statuses (negative filter)
-    const [excludedStatuses, setExcludedStatuses] = useState<
-        OpportunityStatus[]
-    >([]);
+	// Mutations
+	const deleteMutation = useMutation({
+		mutationFn: deleteOpportunities,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+		},
+	});
 
-    /* ---------------------------- data fetching ---------------------------- */
+	const updateStatusMutation = useMutation({
+		mutationFn: ({ id, status }: { id: string; status: OpportunityStatus }) =>
+			updateOpportunityStatus(id, status),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+		},
+	});
 
-    const fetchOpportunities = useCallback(async () => {
-        try {
-            const data = await getOpportunities();
-            setOpportunities(data);
-        } catch (e) {
-            console.error(e);
-        }
-    }, []);
+	const updateFavoriteMutation = useMutation({
+		mutationFn: ({ id, isFavorite }: { id: string; isFavorite: boolean }) =>
+			updateOpportunityFavorite(id, isFavorite),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+		},
+	});
 
-    useEffect(() => {
-        fetchOpportunities();
-    }, [fetchOpportunities]);
+	// Show loading bar for any mutation or query loading
+	const isAnyLoading =
+		isLoading ||
+		deleteMutation.isPending ||
+		updateStatusMutation.isPending ||
+		updateFavoriteMutation.isPending;
 
-    /* ---------------------------- derived data ---------------------------- */
+	useLoadingBar(isAnyLoading);
 
-    const statusCounts = opportunities.reduce<Record<OpportunityStatus, number>>(
-        (acc, o) => {
-            acc[o.status] = (acc[o.status] ?? 0) + 1;
-            return acc;
-        },
-        {
-            to_do: 0,
-            first_contact: 0,
-            second_contact: 0,
-            proposal_sent: 0,
-            negotiation: 0,
-            won: 0,
-            lost: 0,
-        }
-    );
+	// Handlers
+	const handleStatusChange = (id: string, status: OpportunityStatus) => {
+		updateStatusMutation.mutate({ id, status });
+	};
 
-    const filteredOpportunities = opportunities.filter(
-        (o) => !excludedStatuses.includes(o.status)
-    );
+	const handleDelete = (ids: string[]) => {
+		deleteMutation.mutate(ids);
+	};
 
-    /* ---------------------------- update helpers ---------------------------- */
+	const handleFavorite = (id: string, isFavorite: boolean) => {
+		updateFavoriteMutation.mutate({ id, isFavorite });
+	};
 
-    const updateLocalOpportunity = useCallback(
-        (id: string, updater: Partial<OpportunityWithCompany>) => {
-            setOpportunities((prev) =>
-                prev.map((o) => (o.id === id ? { ...o, ...updater } : o))
-            );
-        },
-        []
-    );
+	const handlePagination = (newPage: number) => {
+		updateURL({ page: newPage.toString() });
+	};
 
-    /* ------------------------------ handlers -------------------------------- */
+	const handleSearch = (searchValue: string) => {
+		updateURL({ search: searchValue, page: "1" });
+	};
 
-    const handleStatusChange = useCallback(
-        async (id: string, status: OpportunityStatus) => {
-            updateLocalOpportunity(id, { status });
+	const handleFilterChange = (key: string, values: string[]) => {
+		updateURL({ [key]: values, page: "1" });
+	};
 
-            try {
-                await updateOpportunityStatus(id, status);
-            } catch (e) {
-                console.error(e);
-                fetchOpportunities(); // rollback
-            }
-        },
-        [fetchOpportunities, updateLocalOpportunity]
-    );
+	const handleSaved = () => {
+		queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+		setDialogOpen(false);
+		setEditing(null);
+	};
 
-    const handleFavoriteChange = useCallback(
-        async (id: string, is_favorite: boolean) => {
-            updateLocalOpportunity(id, { is_favorite });
+	// Columns
+	const columns = getColumns({
+		onStatusChange: handleStatusChange,
+		onDeleteOpportunities: handleDelete,
+		editOpportunity: (opp: OpportunityWithCompany) => {
+			setEditing(opp);
+			setDialogOpen(true);
+		},
+		onFavoriteChange: handleFavorite,
+	});
 
-            try {
-                await updateOpportunityFavorite(id, is_favorite);
-            } catch (e) {
-                console.error(e);
-                fetchOpportunities(); // rollback
-            }
-        },
-        [fetchOpportunities, updateLocalOpportunity]
-    );
+	if (!profile?.agency_id) {
+		return <div className="p-8">Loading profile...</div>;
+	}
 
-    const handleDelete = useCallback(async (ids: string[]) => {
-        try {
-            await deleteOpportunities(ids);
-            setOpportunities((prev) => prev.filter((o) => !ids.includes(o.id)));
-        } catch (e) {
-            console.error(e);
-        }
-    }, []);
+	return (
+		<div className="p-8 bg-white m-6 rounded-lg shadow-md h-full">
+			<div className="flex items-center justify-between mb-6">
+				{/* Status badges */}
+				<div className="flex flex-wrap gap-2">
+					{([
+						"to_do",
+						"first_contact",
+						"proposal_sent",
+						"won",
+						"lost",
+					] as OpportunityStatus[]).map((status) => {
+						const count = statusCounts[status];
+						return (
+							<Badge
+								key={status}
+								className={`flex items-center gap-2 px-3 py-1 transition ${STATUS_COLORS[status]}`}
+							>
+								<span className="font-medium">
+									{mapOpportunityStatusLabel[status]}
+								</span>
+								<span className="text-md font-semibold">{count}</span>
+							</Badge>
+						);
+					})}
+				</div>
+				{/* New opportunity button */}
+				<div className="gap-4 flex">
+					<Button
+						onClick={() => {
+							setEditing(null);
+							setDialogOpen(true);
+						}}
+					>
+						Nouvelle opportunité
+					</Button>
+				</div>
+			</div>
 
-    const handleSaved = useCallback(
-        (saved: OpportunityWithCompany) => {
-            setOpportunities((prev) => {
-                const exists = prev.some((o) => o.id === saved.id);
-                return exists
-                    ? prev.map((o) => (o.id === saved.id ? saved : o))
-                    : [saved, ...prev];
-            });
-        },
-        []
-    );
+			{/* DataTable */}
+			<DataTable
+				columns={columns}
+				data={opportunities}
+				total={total}
+				page={page}
+				pageSize={pageSize}
+				search={search}
+				statuses={statuses}
+				contactVia={contactVia}
+				isLoading={isLoading}
+				onSearch={handleSearch}
+				onFilterChange={handleFilterChange}
+				onPagination={handlePagination}
+			/>
 
-    /* -------------------------------- guards -------------------------------- */
-
-    if (loading) return null;
-
-    if (!profile?.agency_id) {
-        return <div>Agency not found for this user</div>;
-    }
-
-    /* -------------------------------- columns ------------------------------- */
-
-    const columns = getColumns({
-        onStatusChange: handleStatusChange,
-        onFavoriteChange: handleFavoriteChange,
-        editOpportunity: (opportunity: OpportunityWithCompany) => {
-            setEditing(opportunity);
-            setDrawerOpen(true);
-        },
-        onDeleteOpportunities: handleDelete,
-    });
-
-    /* -------------------------------- render -------------------------------- */
-
-    return (
-        <div className="p-8 bg-white rounded-lg shadow-md h-full">
-            <div className="flex items-center justify-between mb-6">
-                {/* Status exclusion filters */}
-                <div className="flex flex-wrap gap-2">
-                    {([
-                        "to_do",
-                        "first_contact",
-                        "proposal_sent",
-                        "won",
-                        "lost",
-                    ] as OpportunityStatus[]).map((status) => {
-                        const count = statusCounts[status];
-                        return (
-                            <Badge
-                                key={status}
-                                className={`flex items-center gap-2 px-3 py-1 transition ${STATUS_COLORS[status]} `}>
-                                <span className="font-medium">
-                                    {mapOpportunityStatusLabel[status]}
-                                </span>
-                                <span className="text-md font-semibold">
-                                    {count}
-                                </span>
-                            </Badge>
-                        );
-                    })}
-                </div>
-                <div className="gap-4 flex ">
-                    <Button
-                        onClick={() => {
-                            setEditing(null);
-                            setDrawerOpen(true);
-                        }}
-                    >
-                        Nouvelle opportunité
-                    </Button>
-                </div>
-            </div>
-            <DataTable columns={columns} data={filteredOpportunities} />
-            <OpportunityDrawer
-                userProfile={profile}
-                open={drawerOpen}
-                onOpenChange={setDrawerOpen}
-                initialData={editing}
-                onSaved={handleSaved}
-            />
-        </div>
-    );
+			{/* OpportunityDialog */}
+			<OpportunityDialog
+				userProfile={profile}
+				open={dialogOpen}
+				onOpenChange={setDialogOpen}
+				initialData={editing}
+				onSaved={handleSaved}
+			/>
+		</div>
+	);
 }

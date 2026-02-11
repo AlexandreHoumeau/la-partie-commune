@@ -92,3 +92,20 @@ export const mapOpportunityWithCompanyToFormValues = (opportunity: OpportunityWi
   status: opportunity.status,
   contact_via: opportunity.contact_via!,
 });
+
+
+export const ALL_STATUSES: OpportunityStatus[] = [
+  "to_do",
+  "first_contact",
+  "second_contact",
+  "proposal_sent",
+  "negotiation",
+  "won",
+  "lost",
+];
+
+export const ALL_CONTACT_VIA: ContactVia[] = [
+  "instagram",
+  "email",
+  "phone",
+];
