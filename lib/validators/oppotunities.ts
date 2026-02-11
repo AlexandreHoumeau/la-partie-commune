@@ -5,7 +5,7 @@ export const opportunitySchema = z.object({
   name: z.string().min(1, "Le nom est requis"),
   description: z.string().optional(),
 
-  company_name: z.string().min(1, "Le nom de l’entreprise est requis"),
+  company_name: z.string().min(1, "Le nom de l'entreprise est requis"),
   company_email: z.string().email("Email invalide").optional().or(z.literal("")),
   company_phone: z.string().optional(),
   company_website: z.string().url("URL invalide").optional().or(z.literal("")),
@@ -23,7 +23,31 @@ export const opportunitySchema = z.object({
   ]),
 
   contact_via: z.enum(["email", "phone", "IRL", "instagram", "linkedin"]),
-});
+}).refine(
+  (data) => {
+    // If contact_via is email, company_email must be filled
+    if (data.contact_via === "email") {
+      return data.company_email && data.company_email.trim() !== "";
+    }
+    return true;
+  },
+  {
+    message: "L'email de l'entreprise est requis lorsque la méthode de contact est 'Email'",
+    path: ["company_email"],
+  }
+).refine(
+  (data) => {
+    // If contact_via is phone, company_phone must be filled
+    if (data.contact_via === "phone") {
+      return data.company_phone && data.company_phone.trim() !== "";
+    }
+    return true;
+  },
+  {
+    message: "Le téléphone de l'entreprise est requis lorsque la méthode de contact est 'Téléphone'",
+    path: ["company_phone"],
+  }
+);
 
 export type OpportunityFormValues = z.infer<typeof opportunitySchema>;
 
@@ -52,7 +76,7 @@ export const mapContactViaLabel: Record<ContactVia, string> = {
   phone: "Téléphone",
   IRL: "En personne",
   instagram: "Instagram",
-  linkedin: "linkedin"
+  linkedin: "LinkedIn"
 };
 
 export type ContactVia = "email" | "phone" | "IRL" | "instagram" | "linkedin";
@@ -105,7 +129,9 @@ export const ALL_STATUSES: OpportunityStatus[] = [
 ];
 
 export const ALL_CONTACT_VIA: ContactVia[] = [
-  "instagram",
   "email",
   "phone",
+  "IRL",
+  "instagram",
+  "linkedin",
 ];
