@@ -38,6 +38,8 @@ export async function getUniqueSlug(
 }
 
 export const BUSINESS_SECTORS = [
+  "Agence de communication",
+  "Agence immobilière",
   "Agriculture",
   "Alimentation",
   "Architecture",
@@ -46,6 +48,7 @@ export const BUSINESS_SECTORS = [
   "Automobile",
   "Banque",
   "BTP / Construction",
+  "Cabinet d'avocats",
   "Commerce",
   "Communication",
   "Conseil",
