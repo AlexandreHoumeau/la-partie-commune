@@ -212,10 +212,10 @@ export function OpportunityDialog({
 											control={form.control}
 											name="status"
 											render={({ field }) => (
-												<FormItem>
+												<FormItem className="w-full">
 													<FormLabel>Statut</FormLabel>
 													<Select onValueChange={field.onChange} value={field.value}>
-														<FormControl>
+														<FormControl className="w-full">
 															<SelectTrigger>
 																<SelectValue />
 															</SelectTrigger>
@@ -230,15 +230,14 @@ export function OpportunityDialog({
 												</FormItem>
 											)}
 										/>
-
 										<FormField
 											control={form.control}
 											name="contact_via"
 											render={({ field }) => (
-												<FormItem>
+												<FormItem className="w-full">
 													<FormLabel>Méthode de contact</FormLabel>
 													<Select onValueChange={field.onChange} value={field.value}>
-														<FormControl>
+														<FormControl className="w-full">
 															<SelectTrigger>
 																<SelectValue />
 															</SelectTrigger>
