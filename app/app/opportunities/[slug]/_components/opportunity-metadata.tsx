@@ -1,97 +1,134 @@
-import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
-import { mapContactViaLabel, mapOpportunityStatusLabel, OpportunityWithCompany } from "@/lib/validators/oppotunities"
-import { CONTACT_COLORS, STATUS_COLORS } from "@/utils/general"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { mapContactViaLabel, mapOpportunityStatusLabel, OpportunityWithCompany } from "@/lib/validators/oppotunities";
+import { CONTACT_COLORS, STATUS_COLORS } from "@/utils/general";
 import {
   Briefcase,
   Building2,
-  Globe, LucideIcon, Mail,
+  Globe,
+  LucideIcon,
+  Mail,
   MapPin,
   Phone,
-  Send,
-  Tag
-} from "lucide-react"
+  ExternalLink,
+  Tag,
+} from "lucide-react";
 
 export default function OpportunityMetadata(opportunity: OpportunityWithCompany) {
   return (
-    <div className="bg-background space-y-4">
-      <div className="space-y-3 text-sm">
-        <Row label="Company" icon={Building2}>
-          <span className="font-medium">{opportunity.company?.name}</span>
-        </Row>
+    <div className="space-y-4">
+      {/* Company Name */}
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Building2 className="h-3.5 w-3.5" />
+          <span>Entreprise</span>
+        </div>
+        <p className="text-sm font-semibold">{opportunity.company?.name}</p>
+      </div>
 
-        <Row label="Industry" icon={Briefcase}>
-          <span>{opportunity.company?.business_sector}</span>
-        </Row>
+      {/* Industry */}
+      {opportunity.company?.business_sector && (
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Briefcase className="h-3.5 w-3.5" />
+            <span>Secteur</span>
+          </div>
+          <p className="text-sm">{opportunity.company.business_sector}</p>
+        </div>
+      )}
 
-        <Separator className="my-4" />
-
-        <Row label="Email" icon={Mail}>
-          <a
-            href={`mailto:${opportunity.company?.email}`}
-            className="text-primary underline-offset-2 hover:underline"
-          >
-            {opportunity.company?.email}
-          </a>
-        </Row>
-
-        <Row label="Phone" icon={Phone}>
-          <a
-            href={`tel:${opportunity.company?.phone_number}`}
-            className="text-primary underline-offset-2 hover:underline"
-          >
-            {opportunity.company?.phone_number}
-          </a>
-        </Row>
-
-        {opportunity.company?.website && (
-          <Row label="Website" icon={Globe}>
+      {/* Contact Info */}
+      <div className="space-y-3">
+        {opportunity.company?.email && (
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Mail className="h-3.5 w-3.5" />
+              <span>Email</span>
+            </div>
             <a
-              href={opportunity.company.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline-offset-2 hover:underline"
+              href={`mailto:${opportunity.company.email}`}
+              className="text-sm text-primary hover:underline flex items-center gap-1"
             >
-              {opportunity.company.website}
+              {opportunity.company.email}
             </a>
-          </Row>
+          </div>
         )}
 
-        <Row label="Address" icon={MapPin}>
-          <span>{opportunity.company?.address}</span>
-        </Row>
+        {opportunity.company?.phone_number && (
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Phone className="h-3.5 w-3.5" />
+              <span>Téléphone</span>
+            </div>
+            <a
+              href={`tel:${opportunity.company.phone_number}`}
+              className="text-sm text-primary hover:underline"
+            >
+              {opportunity.company.phone_number}
+            </a>
+          </div>
+        )
+        }
 
-        <Separator className="my-4" />
+        {
+          opportunity.company?.website && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Globe className="h-3.5 w-3.5" />
+                <span>Site web</span>
+              </div>
+              <a
+                href={opportunity.company.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline flex items-center gap-1"
+              >
+                Visiter
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div >
+          )
+        }
 
-        <Row label="Contact via" icon={Send}>
-          <Badge className={CONTACT_COLORS[opportunity.contact_via!]}>{mapContactViaLabel[opportunity.contact_via!]}</Badge>
-        </Row>
+        {
+          opportunity.company?.address && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5" />
+                <span>Adresse</span>
+              </div>
+              <p className="text-sm">{opportunity.company.address}</p>
+            </div>
+          )
+        }
+      </div >
 
-        <Row label="Status" icon={Tag}>
-          <Badge className={STATUS_COLORS[opportunity.status!]}>{mapOpportunityStatusLabel[opportunity.status!]}</Badge>
-        </Row>
-      </div>
-    </div>
-  )
-}
+      {/* Status & Contact Method */}
+      < div className="space-y-3 pt-2" >
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Tag className="h-3.5 w-3.5" />
+            <span>Statut</span>
+          </div>
+          <Badge className={STATUS_COLORS[opportunity.status]}>
+            {mapOpportunityStatusLabel[opportunity.status]}
+          </Badge>
+        </div>
 
-function Row({
-  label,
-  icon: Icon,
-  children,
-}: {
-  label: string
-  icon: LucideIcon
-  children: React.ReactNode
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <Icon className="h-4 w-4" />
-        <span>{label}</span>
-      </div>
-
-      <div className="text-right">{children}</div>
-    </div>
-  )
+        {
+          opportunity.contact_via && (
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Mail className="h-3.5 w-3.5" />
+                <span>Contact via</span>
+              </div>
+              <Badge variant="outline" className={CONTACT_COLORS[opportunity.contact_via]}>
+                {mapContactViaLabel[opportunity.contact_via]}
+              </Badge>
+            </div>
+          )
+        }
+      </div >
+    </div >
+  );
 }
