@@ -26,12 +26,13 @@ export async function updateSession(request: NextRequest) {
             },
         }
     )
-    // refreshing the auth token
+
     const { data: { user } } = await supabase.auth.getUser();
 
     const isAuthRoute = request.nextUrl.pathname.startsWith("/auth");
+    const isProtectedRoute = request.nextUrl.pathname.startsWith("/app")
 
-    if (!user && !isAuthRoute) {
+    if (!user && isProtectedRoute) {
         return NextResponse.redirect(new URL("/auth/login", request.url));
     }
 
