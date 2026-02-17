@@ -1,0 +1,92 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { TabsContent } from "@/components/ui/tabs";
+import { Agency, UpdateAgencyState } from "@/lib/validators/agency";
+import { Building, Globe, Loader2, Mail, MapPin, Phone } from "lucide-react";
+
+type GeneralAgencySettingsProps = {
+	agency: Agency
+	isAgencyPending: boolean
+	agencyState: UpdateAgencyState | null
+	agencyFormAction: (payload: FormData) => void
+}
+export default function GeneralAgencySettings(GenralAgencySettingsProps: GeneralAgencySettingsProps) {
+	const { agency, isAgencyPending, agencyState, agencyFormAction } = GenralAgencySettingsProps
+	return (
+		<TabsContent value="general" className="space-y-6">
+			<form action={agencyFormAction}>
+				<Card className="border-slate-200 shadow-sm overflow-hidden">
+					<CardHeader className="bg-white border-b border-slate-100 pb-6">
+						<div className="flex items-center gap-3">
+							<div className="p-2 bg-blue-50 rounded-lg">
+								<Building className="h-5 w-5 text-blue-600" />
+							</div>
+							<div>
+								<CardTitle className="text-lg font-semibold">Profil de l'agence</CardTitle>
+								<CardDescription>Informations publiques et coordonnées de votre structure.</CardDescription>
+							</div>
+						</div>
+					</CardHeader>
+
+					<CardContent className="p-6 space-y-8">
+						<div className="grid gap-6 md:grid-cols-2">
+							<div className="space-y-2">
+								<Label htmlFor="agency-name" className="text-slate-700 font-medium">Nom commercial</Label>
+								<Input
+									id="agency-name"
+									name="name"
+									defaultValue={agency.name}
+									disabled={isAgencyPending}
+									className="focus-visible:ring-blue-500"
+								/>
+								{agencyState?.errors?.name && (
+									<p className="text-xs text-destructive">{agencyState.errors.name[0]}</p>
+								)}
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="agency-website" className="text-slate-700 font-medium flex items-center gap-2">
+									<Globe className="h-3.5 w-3.5 text-slate-400" /> Site internet
+								</Label>
+								<Input id="agency-website" name="website" type="url" placeholder="https://..." defaultValue={agency.website!} disabled={isAgencyPending} />
+							</div>
+						</div>
+
+						<div className="grid gap-6 md:grid-cols-2">
+							<div className="space-y-2">
+								<Label htmlFor="agency-email" className="text-slate-700 font-medium flex items-center gap-2">
+									<Mail className="h-3.5 w-3.5 text-slate-400" /> Email contact
+								</Label>
+								<Input id="agency-email" name="email" type="email" defaultValue={agency.email!} disabled={isAgencyPending} />
+							</div>
+							<div className="space-y-2">
+								<Label htmlFor="agency-phone" className="text-slate-700 font-medium flex items-center gap-2">
+									<Phone className="h-3.5 w-3.5 text-slate-400" /> Téléphone
+								</Label>
+								<Input id="agency-phone" name="phone" type="tel" defaultValue={agency.phone!} disabled={isAgencyPending} />
+							</div>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="agency-address" className="text-slate-700 font-medium flex items-center gap-2">
+								<MapPin className="h-3.5 w-3.5 text-slate-400" /> Adresse du siège
+							</Label>
+							<Input id="agency-address" name="address" defaultValue={agency.address!} disabled={isAgencyPending} />
+						</div>
+					</CardContent>
+
+					<CardFooter className="bg-slate-50/50 border-t border-slate-100 px-6 py-4 flex justify-between items-center">
+						<p className="text-[11px] text-slate-400 uppercase font-bold tracking-wider italic">Modifications sécurisées</p>
+						<Button type="submit" disabled={isAgencyPending} className="bg-blue-600 hover:bg-blue-700 shadow-sm transition-all active:scale-95">
+							{isAgencyPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+							Enregistrer les changements
+						</Button>
+					</CardFooter>
+				</Card>
+			</form>
+		</TabsContent>
+
+
+	)
+}
