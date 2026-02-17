@@ -1,36 +1,33 @@
+// SettingsLayout.tsx
 import { fetchSettingsData } from '@/actions/settings.server'
-import { Separator } from '@/components/ui/separator'
 import { SettingsProvider } from './settings-context'
 import SettingsSidebar from './settings-sidebar'
 
-export default async function SettingsLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default async function SettingsLayout({ children }: { children: React.ReactNode }) {
   const data = await fetchSettingsData()
 
   return (
     <SettingsProvider data={data}>
-      <div className="min-h-screen bg-white">
-        <div className='py-4 px-4'>
-          <h1 className="text-2xl font-bold text-slate-900 ">Paramètres</h1>
-          <p className="text-sm text-slate-500">Gérez votre profil, votre agence et vos préférences</p>
-        </div>
-        <Separator orientation="horizontal" className="" />
-        <div className="mx-auto">
-          <div className="grid grid-cols-12">
-            <div className="col-span-2 flex mr-4">
-              <div className="flex-1 min-w-0">
-                <SettingsSidebar />
-              </div>
+      {/* Fond légèrement grisé pour faire ressortir les cartes blanches */}
+      <div className="min-h-screen bg-slate-50/50">
+        <div className="max-w-[1200px] mx-auto px-4 py-8">
 
-              <Separator
-                orientation="vertical"
-                className="w-px shrink-0 bg-slate-200"
-              />
-            </div>            <main className="flex-1 col-span-10 min-w-0">
-              <div className="bg-white p-4">
+          <div className="mb-8">
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">Paramètres</h1>
+            <p className="text-[15px] text-slate-500 mt-1">
+              Gérez l'identité de votre agence et les accès de votre équipe.
+            </p>
+          </div>
+
+          <div className="flex flex-col lg:flex-row gap-10">
+            {/* Sidebar avec largeur fixe sur desktop */}
+            <aside className="w-full lg:w-64 flex-shrink-0">
+              <SettingsSidebar />
+            </aside>
+
+            {/* Zone de contenu principale */}
+            <main className="flex-1 min-w-0">
+              <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
                 {children}
               </div>
             </main>

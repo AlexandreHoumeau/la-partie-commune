@@ -1,19 +1,14 @@
+import { Agency, InviteAgencyMemberInput } from "./agency"
 import { Profile } from "./profile"
 
 export type SettingsData = {
     profile: Profile
-    agency: {
-        name: string
-        website: string
-        phone: string
-        email: string
-        address: string
-        // description: string
-        // logo: string | null
-        // primaryColor: string
-    }
+    invites?: InviteAgencyMemberInput[]
+    agency: Agency,
     team: Array<{
-        name: string
+        id: string
+        first_name: string
+        last_name: string
         email: string
         role: string
     }>
