@@ -28,7 +28,7 @@ export async function fetchSettingsData(): Promise<SettingsData> {
     }
     let agency = null
     let team: any[] = []
-
+    let invites: any[] = []
     // 3️⃣ If user has agency
     if (profile.agency_id) {
         const { data: agencyData } = await supabase
@@ -38,7 +38,7 @@ export async function fetchSettingsData(): Promise<SettingsData> {
             .single()
 
         agency = agencyData
-        console.log("Fetched agency:", agency)
+
         // 4️⃣ Fetch agency members
         const { data: members } = await supabase
             .from('profiles')
@@ -46,12 +46,23 @@ export async function fetchSettingsData(): Promise<SettingsData> {
             .eq('agency_id', profile.agency_id)
 
         team = members || []
+
+        console.log(profile.agency_id)
+        // 5️⃣ Fetch pending invites
+        const { data: invitesData } = await supabase
+            .from('agency_invites')
+            .select('id, email, role')
+            .eq('agency_id', profile.agency_id)
+            .eq('accepted', false)
+
+        invites = invitesData || []
     }
 
     return {
         profile,
         agency,
         team,
+        invites,
         ai: null,
         tracking: null,
         billing: null

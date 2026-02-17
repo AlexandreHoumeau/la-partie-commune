@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from "@/lib/supabase/server";
+import { AuthUserContext } from "@/lib/validators/definitions";
 import { Profile, updateProfileSchema, UpdateProfileState } from "@/lib/validators/profile";
 import { revalidatePath } from "next/cache";
 
@@ -93,5 +94,37 @@ export async function updateProfile(
             success: false,
             message: "Une erreur inattendue s'est produite",
         }
+    }
+}
+
+export async function getAuthenticatedUserContext(): Promise<AuthUserContext | null> {
+    try {
+        const supabase = await createClient()
+
+        // 1. Get the Auth User ID
+        const { data: { user }, error: authError } = await supabase.auth.getUser()
+        if (authError || !user) return null
+
+        // 2. Fetch Profile joined with Agency
+        // We use the '!' notation to specify which foreign key to follow
+        const { data, error } = await supabase
+            .from("profiles")
+            .select(`
+                *,
+                agency:agencies!profiles_agency_id_fkey (*)
+            `)
+            .eq("id", user.id)
+            .single()
+
+        if (error || !data) {
+            console.error("Error fetching user context:", error)
+            return null
+        }
+
+        // 'data' now matches the AuthUserContext type
+        return data as AuthUserContext
+    } catch (e) {
+        console.error("Unexpected error:", e)
+        return null
     }
 }

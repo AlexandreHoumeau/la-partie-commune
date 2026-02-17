@@ -1,4 +1,3 @@
-// src/app/actions/auth.ts
 'use server';
 
 import { createClient } from "@/lib/supabase/server";
@@ -6,30 +5,36 @@ import { createClient } from "@/lib/supabase/server";
 type SignupInput = {
     email: string;
     password: string;
-    agencyName: string;
+    agencyName?: string; // Optionnel maintenant
     firstName: string;
     lastName: string;
+    redirectTo?: string; // Pour garder le lien d'invitation
 };
 
 export async function signup(data: SignupInput) {
     const supabase = await createClient();
 
+    // On prépare l'URL de redirection après confirmation d'email
+    // Si data.redirectTo existe (le lien /invite), on l'utilise
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const redirectUrl = data.redirectTo
+        ? `${baseUrl}/auth/callback?next=${encodeURIComponent(data.redirectTo)}`
+        : `${baseUrl}/auth/callback`;
+
     const { error } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
         options: {
-            emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+            emailRedirectTo: redirectUrl,
             data: {
-                agency_name: data.agencyName,
+                // On ne passe agency_name que s'il existe
+                ...(data.agencyName && { agency_name: data.agencyName }),
                 first_name: data.firstName,
                 last_name: data.lastName,
             },
         },
     });
 
-    if (error) {
-        return { error: error.message };
-    }
-
+    if (error) return { error: error.message };
     return { success: true };
 }

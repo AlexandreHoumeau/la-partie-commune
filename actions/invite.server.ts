@@ -1,0 +1,60 @@
+'use server'
+
+import { supabaseAdmin } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
+import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
+
+export async function acceptInvitation(token: string) {
+    const supabase = await createClient()
+
+    // 1. Récupérer l'invitation
+    const { data: invite, error: inviteError } = await supabaseAdmin
+        .from('agency_invites')
+        .select('*, agencies(name)')
+        .eq('token', token)
+        .single()
+
+    if (inviteError || !invite) {
+        return { error: "Invitation introuvable ou invalide." }
+    }
+
+    // 2. Vérifier l'expiration
+    if (new Date(invite.expires_at) < new Date() || invite.accepted) {
+        return { error: "Cette invitation a expiré ou a déjà été utilisée." }
+    }
+
+    // 3. Vérifier l'utilisateur connecté
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        // Redirection vers login avec retour ici après auth
+        redirect(`/login?next=/invite?token=${token}`)
+    }
+
+    if (user.email !== invite.email) {
+        return { error: `Cette invitation est destinée à ${invite.email}. Vous êtes connecté en tant que ${user.email}.` }
+    }
+
+    // 4. TRANSACTION : Mettre à jour le profil + Marquer l'invitation comme acceptée
+    // On met à jour le profil de l'utilisateur avec l'agency_id et le rôle prévu
+    const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+            agency_id: invite.agency_id,
+            role: invite.role
+        })
+        .eq('id', user.id)
+
+    if (profileError) {
+        return { error: "Erreur lors de la mise à jour de votre profil." }
+    }
+
+    // Marquer l'invitation comme traitée
+    await supabase
+        .from('agency_invites')
+        .update({ accepted: true })
+        .eq('id', invite.id)
+
+    revalidatePath('/app', 'layout')
+    return { success: true }
+}
