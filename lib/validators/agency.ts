@@ -88,10 +88,9 @@ export type UpdateAgencyState = {
 ============================================================ */
 
 export const inviteAgencyMemberSchema = z.object({
-    agency_id: agencyIdSchema,
     email: emailSchema,
     role: z.enum(["agency_admin", "agency_member"], {
-        errorMap: () => ({ message: "Rôle invalide" }),
+        error: () => ({ message: "Rôle invalide" }),
     }),
 })
 
@@ -149,4 +148,18 @@ export type RemoveAgencyMemberState = {
         profile_id?: string[]
         agency_id?: string[]
     }
+}
+
+
+export type Agency = {
+    id: string;
+    name: string;
+    created_at: string | null;
+    slug: string;
+    owner_id: string;
+    is_active: boolean;
+    website: string | null;
+    phone: string | null;
+    address: string | null;
+    email: string | null;
 }

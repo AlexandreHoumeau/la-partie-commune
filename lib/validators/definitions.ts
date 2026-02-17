@@ -1,15 +1,6 @@
-export type FormState =
-    | {
-        errors?: {
-            name?: string[]
-            email?: string[]
-            password?: string[]
-        }
-        message?: string
-    }
-    | undefined
+import { Agency } from "./agency";
+import { Profile } from "./profile";
 
-
-export type SessionPayload = {
-    userId: string
-}
+export type AuthUserContext = Profile & {
+    agency: Agency;
+};
