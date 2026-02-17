@@ -112,7 +112,6 @@ export function AIMessageGenerator({ opportunity }: { opportunity: OpportunityAI
 	};
 
 	// const handleSubmit = async (e: React.FormEvent) => {
-	// 	console.log(e?.currentTarget);
 	// 	e.preventDefault();
 	// 	// setIsSaved(false);
 	// 	// setMessageId(null); // Reset message ID to create a new one
