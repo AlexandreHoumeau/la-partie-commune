@@ -22,8 +22,8 @@ export function useUserProfile() {
       }
 
       const { data: profileData, error: profileError } = await supabase
-        .from("profiles") // replace with your profile table
-        .select("agency_id")
+        .from("profiles")
+        .select("*")
         .eq("id", user.id)
         .single();
 
