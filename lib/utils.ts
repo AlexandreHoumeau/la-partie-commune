@@ -77,3 +77,10 @@ export const BUSINESS_SECTORS = [
   "Tourisme",
   "Transport",
 ];
+
+
+// Helper pour les initiales des avatars
+export const getInitials = (firstName?: string, lastName?: string, email?: string) => {
+  if (firstName && lastName) return `${firstName[0]}${lastName[0]}`.toUpperCase();
+  return email?.slice(0, 2).toUpperCase() || "??";
+}; 
