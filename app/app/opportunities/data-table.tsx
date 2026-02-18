@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { ContactVia, OpportunityStatus } from "@/lib/validators/oppotunities";
 import { DataTableToolbar } from "./DataTableToolbar";
+import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -92,28 +93,29 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
-      <DataTableToolbar 
-        table={table} 
-        searchInput={searchInput} 
+      <DataTableToolbar
+        table={table}
+        searchInput={searchInput}
         setSearchInput={setSearchInput}
         statuses={statuses}
         contactVia={contactVia}
         onFilterChange={onFilterChange}
       />
-      
-      <div className="rounded-md border bg-white shadow-sm overflow-hidden">
+
+      {/* TABLE CONTAINER */}
+      <div className="rounded-xl border border-slate-100 bg-white shadow-sm overflow-hidden">
         <Table>
-          <TableHeader className="bg-muted/50">
+          <TableHeader className="bg-slate-50/50">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-muted/50 border-b border-gray-100">
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-b border-slate-100">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan} className="h-10">
+                  <TableHead key={header.id} colSpan={header.colSpan} className="h-11 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -122,15 +124,19 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={columns.length} className="h-32 text-center text-slate-400 text-sm animate-pulse">
                   Chargement des données...
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"} className="border-b border-gray-50">
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="border-b border-slate-50 last:border-0 hover:bg-slate-50/30 transition-colors"
+                >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3">
+                    <TableCell key={cell.id} className="py-4">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -138,7 +144,7 @@ export function DataTable<TData, TValue>({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
+                <TableCell colSpan={columns.length} className="h-32 text-center text-slate-400 text-sm">
                   Aucune opportunité trouvée.
                 </TableCell>
               </TableRow>
@@ -147,37 +153,45 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      {/* Integrated Footer Pagination */}
-      <div className="flex items-center justify-between px-2">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} sur {data.length} ligne(s) sélectionnée(s).
+      {/* PAGINATION PREMIUM */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-50/30 rounded-xl border border-slate-100">
+        <div className="flex-1 text-xs font-medium text-slate-500">
+          <span className="text-slate-900 font-bold">{data.length}</span> sur <span className="text-slate-900 font-bold">{total}</span> opportunités
+          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <span className="ml-1 text-blue-600">
+              ({table.getFilteredSelectedRowModel().rows.length} sélectionnée(s))
+            </span>
+          )}
         </div>
+
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Lignes par page</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-tighter">Lignes</p>
             <Select
               value={`${pageSize}`}
               onValueChange={(value) => onFilterChange("pageSize", [value])}
             >
-              <SelectTrigger className="h-8 w-[70px]">
+              <SelectTrigger className="h-8 w-[70px] rounded-lg border-slate-200 bg-white focus:ring-blue-500">
                 <SelectValue placeholder={pageSize} />
               </SelectTrigger>
-              <SelectContent side="top">
-                {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
+              <SelectContent side="top" className="rounded-xl shadow-xl">
+                {[10, 20, 30, 40, 50].map((size) => (
+                  <SelectItem key={size} value={`${size}`} className="text-xs">
+                    {size}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Page {page} sur {Math.ceil(total / pageSize)}
+
+          <div className="flex w-[100px] items-center justify-center text-xs font-bold text-slate-700">
+            Page {page} / {Math.ceil(total / pageSize)}
           </div>
-          <div className="flex items-center space-x-2">
+
+          <div className="flex items-center space-x-1.5">
             <Button
               variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
+              className="hidden h-8 w-8 p-0 lg:flex rounded-lg border-slate-200 hover:bg-white hover:text-blue-600 hover:border-blue-200"
               onClick={() => onPagination(1)}
               disabled={page === 1}
             >
@@ -185,7 +199,7 @@ export function DataTable<TData, TValue>({
             </Button>
             <Button
               variant="outline"
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 rounded-lg border-slate-200 hover:bg-white hover:text-blue-600 hover:border-blue-200"
               onClick={() => onPagination(page - 1)}
               disabled={page === 1}
             >
@@ -193,7 +207,7 @@ export function DataTable<TData, TValue>({
             </Button>
             <Button
               variant="outline"
-              className="h-8 w-8 p-0"
+              className="h-8 w-8 p-0 rounded-lg border-slate-200 hover:bg-white hover:text-blue-600 hover:border-blue-200"
               onClick={() => onPagination(page + 1)}
               disabled={page * pageSize >= total}
             >
@@ -201,7 +215,7 @@ export function DataTable<TData, TValue>({
             </Button>
             <Button
               variant="outline"
-              className="hidden h-8 w-8 p-0 lg:flex"
+              className="hidden h-8 w-8 p-0 lg:flex rounded-lg border-slate-200 hover:bg-white hover:text-blue-600 hover:border-blue-200"
               onClick={() => onPagination(Math.ceil(total / pageSize))}
               disabled={page * pageSize >= total}
             >

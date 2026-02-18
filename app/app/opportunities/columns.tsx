@@ -10,6 +10,7 @@ import { Copy } from 'lucide-react';
 import { toast } from "sonner";
 import { ArrowUpDown } from "lucide-react"
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 type ColumnsProps = {
     onStatusChange: (id: string, status: OpportunityStatus) => void;
@@ -25,47 +26,45 @@ export const getColumns = ({
     onFavoriteChange
 }: ColumnsProps): ColumnDef<OpportunityWithCompany>[] => [
         {
-            header: "Nom",
+            header: "Entreprise",
             accessorKey: "company.name",
             cell: ({ row }) => {
                 const opportunity = row.original
-                return <Link href={`opportunities/${opportunity.slug}`} className="font-medium text-wrap underline cursor-pointer">{opportunity.company?.name!}</Link>
-
+                return (
+                    <div className="flex flex-col">
+                        <Link href={`opportunities/${opportunity.slug}`} className="font-bold text-slate-900 hover:text-blue-600 transition-colors">
+                            {opportunity.company?.name}
+                        </Link>
+                        <span className="text-[10px] text-slate-400 uppercase font-medium tracking-tight">
+                            {opportunity.company?.business_sector || "Secteur inconnu"}
+                        </span>
+                    </div>
+                )
             }
         },
         {
             accessorKey: "company.email",
-            header: ({ column }) => {
-                return (
-                    <Button
-                        variant="ghost"
-                        className="cursor-pointer"
-                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                    >
-                        Email
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                )
-            },
+            header: "Contact",
             cell: ({ row }) => {
                 const email = row.original.company?.email
-                return email ? <span className="font-semibold cursor-pointer flex gap-2 items-center" onClick={async () => {
-                    await navigator.clipboard.writeText(email);
-                    toast.success("Copié dans le presse-papiers", { position: "top-right" });
-                }}>{email}<Copy size={14} /></span> : null;
+                if (!email) return <span className="text-slate-300 italic text-xs">Pas d'email</span>;
+                return (
+                    <div
+                        className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-blue-600 transition-colors group"
+                        onClick={() => {
+                            navigator.clipboard.writeText(email);
+                            toast.success("Email copié");
+                        }}
+                    >
+                        <span className="max-w-[150px] truncate">{email}</span>
+                        <Copy className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                )
             }
         },
         {
-            accessorKey: "company.phone_number",
-            header: "Phone",
-        },
-        {
             accessorKey: "status",
-            filterFn: (row, columnId, filterValue: OpportunityStatus[]) => {
-                if (!Array.isArray(filterValue)) return true;
-                return filterValue.includes(row.getValue(columnId));
-            },
-            header: "Status",
+            header: "Statut",
             cell: ({ row }) => {
                 const status = row.getValue<OpportunityStatus>("status");
                 const id = row.original.id;
@@ -73,20 +72,14 @@ export const getColumns = ({
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Badge className={`${STATUS_COLORS[status]} cursor-pointer`}>
+                            <Badge className={cn("cursor-pointer px-2.5 py-1 rounded-md border-none font-bold text-[10px] uppercase tracking-tighter", STATUS_COLORS[status])}>
                                 {mapOpportunityStatusLabel[status]}
                             </Badge>
                         </DropdownMenuTrigger>
-
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="start" className="w-48 rounded-xl shadow-xl border-slate-100">
                             {Object.entries(mapOpportunityStatusLabel).map(([key, label]) => (
-                                <DropdownMenuItem
-                                    key={key}
-                                    onClick={() =>
-                                        onStatusChange(id, key as OpportunityStatus)
-                                    }
-                                >
-                                    <Badge className={`${STATUS_COLORS[key as OpportunityStatus]} cursor-pointer`}>
+                                <DropdownMenuItem key={key} onClick={() => onStatusChange(id, key as OpportunityStatus)} className="focus:bg-slate-50">
+                                    <Badge className={cn("text-[10px] border-none uppercase", STATUS_COLORS[key as OpportunityStatus])}>
                                         {label}
                                     </Badge>
                                 </DropdownMenuItem>
@@ -95,8 +88,7 @@ export const getColumns = ({
                     </DropdownMenu>
                 );
             },
-        }
-        ,
+        },
         {
             accessorKey: "contact_via",
             header: "Contact Via",

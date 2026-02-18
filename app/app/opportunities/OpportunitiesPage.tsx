@@ -16,6 +16,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { DataTable } from "./data-table";
 import { getColumns } from "./columns";
+import { Plus, Briefcase } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function OpportunitiesPage() {
 	const { profile } = useUserProfile();
@@ -23,7 +25,6 @@ export default function OpportunitiesPage() {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const [editing, setEditing] = useState<OpportunityWithCompany | null>(null);
 
-	// Fetch opportunities with URL-driven state
 	const {
 		opportunities,
 		total,
@@ -41,147 +42,90 @@ export default function OpportunitiesPage() {
 		enabled: !!profile?.agency_id,
 	});
 
-	// Mutations
-	const deleteMutation = useMutation({
-		mutationFn: deleteOpportunities,
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-		},
-	});
-
+	// Mutations (inchangées) ...
 	const updateStatusMutation = useMutation({
-		mutationFn: ({ id, status }: { id: string; status: OpportunityStatus }) =>
-			updateOpportunityStatus(id, status),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-		},
+		mutationFn: ({ id, status }: { id: string; status: OpportunityStatus }) => updateOpportunityStatus(id, status),
+		onSuccess: () => queryClient.invalidateQueries({ queryKey: ["opportunities"] }),
 	});
 
-	const updateFavoriteMutation = useMutation({
-		mutationFn: ({ id, isFavorite }: { id: string; isFavorite: boolean }) =>
-			updateOpportunityFavorite(id, isFavorite),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-		},
-	});
+	useLoadingBar(isLoading);
 
-	// Show loading bar for any mutation or query loading
-	const isAnyLoading =
-		isLoading ||
-		deleteMutation.isPending ||
-		updateStatusMutation.isPending ||
-		updateFavoriteMutation.isPending;
-
-	useLoadingBar(isAnyLoading);
-
-	// Handlers
-	const handleStatusChange = (id: string, status: OpportunityStatus) => {
-		updateStatusMutation.mutate({ id, status });
-	};
-
-	const handleDelete = (ids: string[]) => {
-		deleteMutation.mutate(ids);
-	};
-
-	const handleFavorite = (id: string, isFavorite: boolean) => {
-		updateFavoriteMutation.mutate({ id, isFavorite });
-	};
-
-	const handlePagination = (newPage: number) => {
-		updateURL({ page: newPage.toString() });
-	};
-
-	const handleSearch = (searchValue: string) => {
-		updateURL({ search: searchValue, page: "1" });
-	};
-
-	const handleFilterChange = (key: string, values: string[]) => {
-		updateURL({ [key]: values, page: "1" });
-	};
-
-	const handleSaved = () => {
-		queryClient.invalidateQueries({ queryKey: ["opportunities"] });
-		setDialogOpen(false);
-		setEditing(null);
-	};
-
-	// Columns
 	const columns = getColumns({
-		onStatusChange: handleStatusChange,
-		onDeleteOpportunities: handleDelete,
-		editOpportunity: (opp: OpportunityWithCompany) => {
-			setEditing(opp);
-			setDialogOpen(true);
-		},
-		onFavoriteChange: handleFavorite,
+		onStatusChange: (id, status) => updateStatusMutation.mutate({ id, status }),
+		onDeleteOpportunities: (ids) => deleteOpportunities(ids).then(() => queryClient.invalidateQueries({ queryKey: ["opportunities"] })),
+		editOpportunity: (opp) => { setEditing(opp); setDialogOpen(true); },
+		onFavoriteChange: (id, isFavorite) => updateOpportunityFavorite(id, isFavorite).then(() => queryClient.invalidateQueries({ queryKey: ["opportunities"] })),
 	});
 
-	if (!profile?.agency_id) {
-		return <div className="p-8">Loading profile...</div>;
-	}
+	if (!profile?.agency_id) return <div className="p-8">Chargement...</div>;
 
 	return (
-		<div className="p-8 bg-white m-6 rounded-lg shadow-md h-full">
-			<div className="flex items-center justify-between mb-6">
-				{/* Status badges */}
-				<div className="flex flex-wrap gap-2">
-					{([
-						"to_do",
-						"first_contact",
-						"proposal_sent",
-						"won",
-						"lost",
-					] as OpportunityStatus[]).map((status) => {
-						const count = statusCounts[status];
-						return (
-							<Badge
-								key={status}
-								className={`flex items-center gap-2 px-3 py-1 transition ${STATUS_COLORS[status]}`}
-							>
-								<span className="font-medium">
-									{mapOpportunityStatusLabel[status]}
-								</span>
-								<span className="text-md font-semibold">{count}</span>
-							</Badge>
-						);
-					})}
+		<div className="max-w-[1400px] mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500 py-6">
+			{/* HEADER & ACTIONS */}
+			<div className="flex flex-col md:flex-row md:items-end justify-between gap-4 px-1">
+				<div>
+					<div className="flex items-center gap-2 mb-1">
+						<div className="p-1.5 bg-blue-600 rounded-lg shadow-blue-100 shadow-lg">
+							<Briefcase className="h-4 w-4 text-white" />
+						</div>
+						<h1 className="text-2xl font-bold text-slate-900">Opportunités</h1>
+					</div>
+					<p className="text-slate-500 text-sm italic">Gérez votre pipeline commercial et suivez vos prospects.</p>
 				</div>
-				{/* New opportunity button */}
-				<div className="gap-4 flex">
-					<Button
-						onClick={() => {
-							setEditing(null);
-							setDialogOpen(true);
-						}}
-					>
-						Nouvelle opportunité
-					</Button>
-				</div>
+
+				<Button
+					onClick={() => { setEditing(null); setDialogOpen(true); }}
+					className="bg-blue-600 hover:bg-blue-700 shadow-md transition-all active:scale-95"
+				>
+					<Plus className="mr-2 h-4 w-4" />
+					Nouvelle opportunité
+				</Button>
 			</div>
 
-			{/* DataTable */}
-			<DataTable
-				columns={columns}
-				data={opportunities}
-				total={total}
-				page={page}
-				pageSize={pageSize}
-				search={search}
-				statuses={statuses}
-				contactVia={contactVia}
-				isLoading={isLoading}
-				onSearch={handleSearch}
-				onFilterChange={handleFilterChange}
-				onPagination={handlePagination}
-			/>
+			{/* STATUS METRICS */}
+			<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+				{(["to_do", "first_contact", "proposal_sent", "won", "lost"] as OpportunityStatus[]).map((status) => {
+					const count = statusCounts[status] || 0;
+					return (
+						<div key={status} className="bg-white border border-slate-100 p-3 rounded-xl shadow-sm hover:border-blue-200 transition-all group">
+							<p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 group-hover:text-blue-500 transition-colors">
+								{mapOpportunityStatusLabel[status]}
+							</p>
+							<div className="flex items-baseline gap-2">
+								<span className="text-xl font-bold text-slate-900">{count}</span>
+								<Badge variant="outline" className={cn("text-[10px] h-4 px-1.5 border-none", STATUS_COLORS[status])}>
+									Active
+								</Badge>
+							</div>
+						</div>
+					);
+				})}
+			</div>
 
-			{/* OpportunityDialog */}
+			{/* TABLE CONTAINER */}
+			<div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden p-1">
+				<DataTable
+					columns={columns}
+					data={opportunities}
+					total={total}
+					page={page}
+					pageSize={pageSize}
+					search={search}
+					statuses={statuses}
+					contactVia={contactVia}
+					isLoading={isLoading}
+					onSearch={(val) => updateURL({ search: val, page: "1" })}
+					onFilterChange={(key, values) => updateURL({ [key]: values, page: "1" })}
+					onPagination={(newPage) => updateURL({ page: newPage.toString() })}
+				/>
+			</div>
+
 			<OpportunityDialog
 				userProfile={profile}
 				open={dialogOpen}
 				onOpenChange={setDialogOpen}
 				initialData={editing}
-				onSaved={handleSaved}
+				onSaved={() => { queryClient.invalidateQueries({ queryKey: ["opportunities"] }); setDialogOpen(false); }}
 			/>
 		</div>
 	);
