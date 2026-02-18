@@ -1,4 +1,5 @@
 import { Agency, InviteAgencyMemberInput } from "./agency"
+import { AgencyAiConfig } from "./ai"
 import { Profile } from "./profile"
 
 export type SettingsData = {
@@ -12,12 +13,7 @@ export type SettingsData = {
         email: string
         role: string
     }>
-    ai: {
-        context: string
-        keyPoints: string
-        tone: string
-        additionalInstructions: string
-    } | null
+    ai: AgencyAiConfig | null
     tracking: {
         enabled: boolean
         trackOpens: boolean
