@@ -1,8 +1,8 @@
 "use server";
+
 import { MessageSchema } from "@/lib/email_generator/utils";
 import { createClient } from "@/lib/supabase/server";
 import { Mistral } from '@mistralai/mistralai';
-import { ContentChunk } from "@mistralai/mistralai/models/components";
 import { revalidatePath } from "next/cache";
 
 export type SaveAIMessageInput = {
@@ -14,6 +14,7 @@ export type SaveAIMessageInput = {
 	subject?: string;
 	body: string;
 };
+
 
 export async function saveAIGeneratedMessage(input: SaveAIMessageInput) {
 	const supabase = await createClient();
@@ -38,9 +39,7 @@ export async function saveAIGeneratedMessage(input: SaveAIMessageInput) {
 			return { success: false, error: error.message };
 		}
 
-		// Revalidate the opportunity page to show the new message
 		revalidatePath(`/opportunities/${input.opportunityId}`);
-
 		return { success: true, data };
 	} catch (error) {
 		console.error("Error saving AI message:", error);
@@ -50,7 +49,6 @@ export async function saveAIGeneratedMessage(input: SaveAIMessageInput) {
 
 export async function getAIGeneratedMessages(opportunityId: string) {
 	const supabase = await createClient();
-
 	try {
 		const { data, error } = await supabase
 			.from("ai_generated_messages")
@@ -58,14 +56,9 @@ export async function getAIGeneratedMessages(opportunityId: string) {
 			.eq("opportunity_id", opportunityId)
 			.order("created_at", { ascending: false });
 
-		if (error) {
-			console.error("Error fetching AI messages:", error);
-			return { success: false, error: error.message, data: [] };
-		}
-
+		if (error) return { success: false, error: error.message, data: [] };
 		return { success: true, data: data || [] };
 	} catch (error) {
-		console.error("Error fetching AI messages:", error);
 		return { success: false, error: "Une erreur est survenue", data: [] };
 	}
 }
@@ -78,26 +71,19 @@ export async function updateAIGeneratedMessage(
 	try {
 		const { data, error } = await supabase
 			.from("ai_generated_messages")
-			.update({
-				...updates,
-				updated_at: new Date().toISOString(),
-			})
+			.update({ ...updates, updated_at: new Date().toISOString() })
 			.eq("id", messageId)
 			.select()
 			.single();
 
-		if (error) {
-			console.error("Error updating AI message:", error);
-			return { success: false, error: error.message };
-		}
-
+		if (error) return { success: false, error: error.message };
 		return { success: true, data };
 	} catch (error) {
-		console.error("Error updating AI message:", error);
 		return { success: false, error: "Une erreur est survenue" };
 	}
 }
 
+// --- GENERATION ENGINE ---
 
 export async function generateOpportunityMessage(
 	prevState: any,
@@ -106,111 +92,114 @@ export async function generateOpportunityMessage(
 ): Promise<{ subject: string | null; body: string; error?: string; id: string | null }> {
 	try {
 		const apiKey = process.env.MISTRAL_API_KEY;
-		if (!apiKey) {
-			return { subject: null, body: "", error: "Clé API Mistral manquante", id: null };
+		if (!apiKey) return { subject: null, body: "", error: "Clé API Mistral manquante", id: null };
+
+		const supabase = await createClient();
+
+		// 1. RÉCUPÉRATION DES RÉGLAGES IA DE L'AGENCE
+		let aiConfig = null;
+		if (agencyId) {
+			const { data } = await supabase
+				.from('agency_ai_configs')
+				.select('*')
+				.eq('agency_id', agencyId)
+				.single();
+			aiConfig = data;
 		}
 
+		// 2. PARSING DES DONNÉES DU FORMULAIRE
 		const rawOpportunity = formData.get("opportunity") as string;
 		const customContext = formData.get("customContext") as string;
 		const channel = formData.get("channel") as string;
 
 		const { opportunity, tone, length } = MessageSchema.parse({
 			opportunity: JSON.parse(rawOpportunity),
-			tone: formData.get("tone"),
+			tone: formData.get("tone") || aiConfig?.tone || "professional",
 			length: formData.get("length"),
 			channel,
 			customContext,
 		});
 
-		const supabase = await createClient();
-
-		// Build context-aware prompt
+		// Contextes métiers
 		const statusContext = {
-			"to_do": "premier contact, introduction de votre agence",
-			"first_contact": "suivi après premier contact",
-			"second_contact": "relance après discussion initiale",
-			"proposal_sent": "suivi de proposition envoyée",
-			"negotiation": "négociation en cours",
-			"won": "confirmation de collaboration",
-			"lost": "message de clôture professionnel",
+			"to_do": "premier contact, introduction",
+			"first_contact": "suivi après premier échange",
+			"proposal_sent": "relance suite à proposition envoyée",
+			"negotiation": "négociation des termes",
+			"won": "bienvenue et kickoff",
+			"lost": "clôture professionnelle",
 		}[opportunity.status as string] || "contact professionnel";
 
 		const channelGuidelines = {
-			email: "Email professionnel avec sujet accrocheur et structure claire",
-			instagram: "Message direct Instagram, concis et engageant (max 2-3 phrases)",
-			linkedin: "Message LinkedIn professionnel mais accessible",
-			phone: "Script d'appel téléphonique avec points clés",
-			IRL: "Points de discussion pour rencontre en personne",
+			email: "Email professionnel avec objet et corps structuré",
+			instagram: "DM Instagram, très court et direct",
+			linkedin: "Message LinkedIn (InMail), pro mais pas rigide",
+			phone: "Script d'appel synthétique",
+			IRL: "Guide de conversation pour rencontre physique",
 		}[channel] || "Message professionnel";
 
+		// 3. CONSTRUCTION DU PROMPT DYNAMIQUE
 		const prompt = `
             <s>[INST]
-            Tu es Alexandre de l'Atelier Voisin, une agence créative spécialisée en design et communication.
+            IDENTITÉ DE L'EXPÉDITEUR (TON AGENCE) :
+            ${aiConfig?.ai_context ? aiConfig.ai_context : "Tu es un agent commercial professionnel."}
+            
+            TES POINTS FORTS & ARGUMENTS DE VENTE :
+            ${aiConfig?.key_points ? aiConfig.key_points : "- Expertise métier et réactivité."}
 
-            CONTEXTE DE L'OPPORTUNITÉ :
-            - Phase : ${statusContext}
+            CONTEXTE DU PROSPECT :
             - Entreprise : ${opportunity.company.name}
+            - Phase actuelle : ${statusContext}
             - Secteur : ${opportunity.company.business_sector || "non spécifié"}
-            - Site web : ${opportunity.company.website || "non fourni"}
-            - Description : ${opportunity.description || "Pas de description"}
-            ${customContext ? `- Contexte additionnel : ${customContext}` : ""}
+            - Description de l'opportunité : ${opportunity.description || "Pas de description"}
+            ${customContext ? `- Note additionnelle : ${customContext}` : ""}
 
-            CONSIGNES :
+            CONSIGNES DE RÉDACTION :
             - Canal : ${channelGuidelines}
-            - Ton : ${tone === "formal" ? "formel et professionnel" : tone === "friendly" ? "amiable et chaleureux" : "décontracté et accessible"}
-            - Longueur : ${length === "short" ? "court et percutant (2-3 phrases)" : "moyen et détaillé (1-2 paragraphes)"}
-            ${channel === "email" ? "- Structure : Sujet attractif + Corps avec introduction, proposition de valeur, et call-to-action" : ""}
-            ${channel !== "instagram" ? "- Signature : Alexandre – Atelier Voisin" : "- Pas de signature formelle"}
+            - Ton : ${tone === "formal" ? "très formel" : tone === "friendly" ? "chaleureux/amical" : "décontracté"}
+            - Longueur : ${length === "short" ? "très concis (2-3 phrases)" : "détaillé et argumenté"}
+            ${aiConfig?.custom_instructions ? `- INSTRUCTIONS SPÉCIFIQUES À RESPECTER : ${aiConfig.custom_instructions}` : ""}
 
-            RÈGLES :
-            1. Message naturel et personnalisé (pas de template)
-            2. Adapté au contexte et à la phase de l'opportunité
-            3. Orienté vers une action concrète
-            4. Mentionner des éléments spécifiques à l'entreprise quand possible
-			5. Ne pas inclure de commentaires ou d'explications, uniquement le message à envoyer au prospect
-            ${channel === "email" ? "5. Commence par le SUJET sur une ligne séparée, puis le corps du message" : ""}
+            RÈGLES D'OR :
+            1. Ne JAMAIS inventer de faits non mentionnés.
+            2. Personnalise l'accroche par rapport à l'entreprise.
+            3. Inclus un Call-To-Action (CTA) clair.
+            4. Ne donne QUE le message final, sans aucun commentaire avant ou après.
+            ${channel === "email" ? "5. La première ligne DOIT être le SUJET de l'email." : ""}
 
             Rédige le message maintenant.
             [/INST]</s>`;
 
+		// 4. APPEL MISTRAL AI
 		const mistral = new Mistral({ apiKey });
 		const response = await mistral.chat.complete({
 			model: "mistral-small-latest",
 			messages: [{ role: "user", content: prompt }],
 			temperature: 0.7,
-			maxTokens: 500,
 		});
 
-		let messageText: string;
-		if (Array.isArray(response.choices[0].message.content)) {
-			messageText = response.choices[0].message.content
-				.map((chunk: ContentChunk) => {
-					if (typeof chunk === "string") return chunk;
-					if ("text" in chunk) return chunk.text;
-					return "";
-				})
-				.join("");
+		let messageText = "";
+		const content = response.choices?.[0]?.message?.content;
+		if (Array.isArray(content)) {
+			messageText = content.map(c => ("text" in c ? c.text : "")).join("");
 		} else {
-			messageText = response.choices[0].message.content || "";
+			messageText = content || "";
 		}
 
-		// Extract subject for emails
+		// 5. EXTRACTION SUJET / CORPS
 		let subject: string | null = null;
 		let body = messageText;
 
-		if (channel === "email" && messageText.includes("\n")) {
-			const lines = messageText.split("\n").filter(l => l.trim());
-			const firstLine = lines[0].trim();
-
-			// Check if first line looks like a subject
-			if (firstLine.length < 100 && !firstLine.includes(".") && lines.length > 1) {
-				subject = firstLine.replace(/^(Sujet|Subject)\s*:\s*/i, "");
-				body = lines.slice(1).join("\n").trim();
+		if (channel === "email") {
+			const parts = messageText.split("\n").filter(p => p.trim() !== "");
+			if (parts.length > 1) {
+				subject = parts[0].replace(/^(Sujet|Subject|Objet)\s*:\s*/i, "").trim();
+				body = parts.slice(1).join("\n").trim();
 			}
 		}
 
-		// Save to database
-		const { data: savedMessage, error: dbError } = await supabase
+		// 6. SAUVEGARDE EN BASE
+		const { data: savedMessage } = await supabase
 			.from("ai_generated_messages")
 			.insert({
 				opportunity_id: opportunity.id,
@@ -225,36 +214,16 @@ export async function generateOpportunityMessage(
 			.select()
 			.single();
 
-		if (dbError) {
-			console.error("Error saving message:", dbError);
-		}
+		return { subject, body, id: savedMessage?.id || null };
 
-		return {
-			subject,
-			body,
-			id: savedMessage?.id,
-		};
 	} catch (error) {
 		console.error("Erreur génération message:", error);
-		return {
-			subject: null,
-			body: "",
-			error: "Erreur lors de la génération. Veuillez réessayer.",
-			id: null,
-		};
+		return { subject: null, body: "", error: "Échec de la génération.", id: null };
 	}
 }
 
 export async function deleteGeneratedMessage(messageId: string) {
 	const supabase = await createClient();
-
-	const { error } = await supabase
-		.from("ai_generated_messages")
-		.delete()
-		.eq("id", messageId);
-
-	if (error) {
-		console.error("Error deleting message:", error);
-		throw error;
-	}
+	const { error } = await supabase.from("ai_generated_messages").delete().eq("id", messageId);
+	if (error) throw error;
 }

@@ -149,3 +149,34 @@ export async function toggleTrackingLink(linkId: string, isActive: boolean) {
         return { success: false, error: "Une erreur est survenue" };
     }
 }
+
+// Dans actions/tracking.server.ts
+
+export async function getTrackingLinksWithStats(opportunityId: string) {
+    const supabase = await createClient();
+
+    try {
+        // On récupère les liens ET on compte les ouvertures via un count
+        const { data, error } = await supabase
+            .from("tracking_links")
+            .select(`
+                *,
+                tracking_opens(id)
+            `)
+            .eq("opportunity_id", opportunityId)
+            .order("created_at", { ascending: false });
+
+        if (error) throw error;
+
+        // On formate les données pour avoir un "open_count" facile à utiliser
+        const linksWithStats = data.map(link => ({
+            ...link,
+            open_count: link.tracking_opens?.length || 0
+        }));
+
+        return { success: true, data: linksWithStats };
+    } catch (error) {
+        console.error("Error fetching links with stats:", error);
+        return { success: false, data: [] };
+    }
+}

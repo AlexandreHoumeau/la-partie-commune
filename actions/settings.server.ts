@@ -58,12 +58,23 @@ export async function fetchSettingsData(): Promise<SettingsData> {
         invites = invitesData || []
     }
 
+    const { data: aiConfig, error } = await supabase
+        .from('agency_ai_configs')
+        .select('*')
+        .eq('agency_id', profile.agency_id)
+        .single()
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 = Not Found, ce qui est OK au début
+        console.error("Fetch error:", error)
+    }
+
+
     return {
         profile,
         agency,
         team,
         invites,
-        ai: null,
+        ai: aiConfig || null,
         tracking: null,
         billing: null
     }
