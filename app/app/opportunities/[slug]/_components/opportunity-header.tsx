@@ -5,7 +5,7 @@ import { ArrowLeftIcon } from 'lucide-react';
 
 export default function OpportunityHeader({ opportunity }: { opportunity: OpportunityWithCompany }) {
   return (
-    <div className="flex items-center justify-start bg-white p-6">
+    <div className="flex items-center justify-start bg-white p-4 border-b shadow-sm">
       <Button variant="ghost" className="p-0 mr-2" onClick={() => window.history.back()}>
         <ArrowLeftIcon className=" text-gray-500 cursor-pointer" />
       </Button>

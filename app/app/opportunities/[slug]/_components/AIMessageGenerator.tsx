@@ -205,7 +205,7 @@ export function AIMessageGenerator({ opportunity }: { opportunity: OpportunityAI
 
 	const toneOptions = [
 		{ value: "formal", label: "Formel" },
-		{ value: "friendly", label: "Amiable" },
+		{ value: "friendly", label: "Aimable" },
 		{ value: "casual", label: "Décontracté" },
 	];
 

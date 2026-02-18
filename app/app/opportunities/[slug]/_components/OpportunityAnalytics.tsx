@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getTrackingLinks } from "@/actions/tracking.server";
-import { BarChart3, MousePointer, Globe, Monitor, Smartphone, Tablet } from "lucide-react";
+import { getTrackingLinksWithStats } from "@/actions/tracking.server"; // Note le changement de fonction
+import { BarChart3, MousePointer, Globe, Eye, MailCheck } from "lucide-react";
 
 export function OpportunityAnalytics({ opportunityId }: { opportunityId: string }) {
     const [links, setLinks] = useState<any[]>([]);
@@ -15,7 +15,7 @@ export function OpportunityAnalytics({ opportunityId }: { opportunityId: string 
 
     const loadAnalytics = async () => {
         setIsLoading(true);
-        const result = await getTrackingLinks(opportunityId);
+        const result = await getTrackingLinksWithStats(opportunityId);
         if (result.success) {
             setLinks(result.data);
         }
@@ -23,12 +23,26 @@ export function OpportunityAnalytics({ opportunityId }: { opportunityId: string 
     };
 
     const totalClicks = links.reduce((sum, link) => sum + (link.click_count || 0), 0);
-    const activeLinks = links.filter(l => l.is_active).length;
+    const totalOpens = links.reduce((sum, link) => sum + (link.open_count || 0), 0);
 
     return (
         <div className="space-y-6">
-            {/* Overview Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Carte OUVERTURES (Nouveau) */}
+                <Card className="border-indigo-100 bg-indigo-50/20">
+                    <CardHeader className="pb-3">
+                        <CardTitle className="text-sm font-medium text-indigo-600 flex items-center gap-2">
+                            <Eye className="h-4 w-4" />
+                            Emails Ouverts
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-3xl font-bold text-indigo-900">{totalOpens}</div>
+                        <p className="text-xs text-indigo-500 mt-1">Nombre total d'ouvertures</p>
+                    </CardContent>
+                </Card>
+
+                {/* Carte CLICS */}
                 <Card>
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
@@ -38,105 +52,64 @@ export function OpportunityAnalytics({ opportunityId }: { opportunityId: string 
                     </CardHeader>
                     <CardContent>
                         <div className="text-3xl font-bold">{totalClicks}</div>
-                        <p className="text-xs text-gray-500 mt-1">
-                            Sur {links.length} lien{links.length > 1 ? 's' : ''}
-                        </p>
+                        <p className="text-xs text-gray-500 mt-1">Interactions avec vos liens</p>
                     </CardContent>
                 </Card>
 
+                {/* Carte TAUX DE RÉACTION */}
                 <Card>
                     <CardHeader className="pb-3">
                         <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <BarChart3 className="h-4 w-4" />
-                            Liens actifs
+                            <MailCheck className="h-4 w-4" />
+                            Réactivité
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{activeLinks}</div>
-                        <p className="text-xs text-gray-500 mt-1">
-                            {links.length - activeLinks} inactif{links.length - activeLinks > 1 ? 's' : ''}
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <Globe className="h-4 w-4" />
-                            Taux de clic
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold">
-                            {links.length > 0 ? Math.round(totalClicks / links.length) : 0}
+                        <div className="text-3xl font-bold text-emerald-600">
+                            {totalOpens > 0 ? Math.round((totalClicks / totalOpens) * 100) : 0}%
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                            Moyenne par lien
-                        </p>
+                        <p className="text-xs text-gray-500 mt-1">Clics par rapport aux ouvertures</p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Detailed Stats */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Statistiques détaillées</CardTitle>
-                    <CardDescription>
-                        Analyse des performances de vos liens de tracking
-                    </CardDescription>
+                    <CardTitle>Performance par campagne</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {isLoading ? (
-                        <p className="text-center text-gray-500 py-8">Chargement...</p>
-                    ) : links.length === 0 ? (
-                        <div className="text-center py-8">
-                            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                            <p className="text-gray-600">Aucune donnée disponible</p>
-                            <p className="text-sm text-gray-500 mt-1">
-                                Créez des liens trackables pour voir les statistiques
-                            </p>
-                        </div>
+                        <p className="text-center py-8">Chargement...</p>
                     ) : (
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             {links.map((link) => (
-                                <div
-                                    key={link.id}
-                                    className="p-4 border border-gray-200 rounded-lg"
-                                >
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="font-medium text-sm">
-                                            {link.campaign_name || `Lien ${link.short_code}`}
+                                <div key={link.id} className="space-y-3">
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <h4 className="font-bold text-slate-900">{link.campaign_name || `Lien ${link.short_code}`}</h4>
+                                            <p className="text-xs text-slate-400">Créé le {new Date(link.created_at).toLocaleDateString()}</p>
                                         </div>
-                                        <div className="text-sm text-gray-600">
-                                            {link.click_count || 0} clics
+                                        <div className="flex gap-4 text-sm font-medium">
+                                            <span className="text-indigo-600">{link.open_count} ouvertures</span>
+                                            <span className="text-blue-600">{link.click_count} clics</span>
                                         </div>
                                     </div>
-
-                                    {link.click_count > 0 && (
-                                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                                            <div
-                                                className="bg-blue-600 h-2 rounded-full"
-                                                style={{
-                                                    width: `${Math.min((link.click_count / totalClicks) * 100, 100)}%`
-                                                }}
-                                            />
-                                        </div>
-                                    )}
+                                    
+                                    {/* Double barre de progression */}
+                                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                                        <div 
+                                            className="bg-indigo-400 h-full border-r border-white" 
+                                            style={{ width: `${totalOpens > 0 ? (link.open_count / totalOpens) * 100 : 0}%` }}
+                                        />
+                                        <div 
+                                            className="bg-blue-500 h-full" 
+                                            style={{ width: `${totalClicks > 0 ? (link.click_count / totalClicks) * 100 : 0}%` }}
+                                        />
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     )}
-                </CardContent>
-            </Card>
-
-            {/* Quick tips */}
-            <Card className="bg-blue-50 border-blue-200">
-                <CardContent className="pt-6">
-                    <h4 className="font-semibold text-blue-900 mb-2">💡 Conseil</h4>
-                    <p className="text-sm text-blue-800">
-                        Pour obtenir des statistiques plus détaillées (géolocalisation, devices, etc.),
-                        activez le tracking avancé dans les paramètres de l'agence.
-                    </p>
                 </CardContent>
             </Card>
         </div>
