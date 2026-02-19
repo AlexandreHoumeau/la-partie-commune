@@ -26,7 +26,7 @@ export function OpportunityPageContent({ opportunity, agencyWebsite }: { opportu
     return (
         <div className="w-full max-w-6xl mx-auto space-y-6">
             {/* Navigation Style SaaS "Pill" */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div className="flex items-center justify-between">
                 <nav className="flex p-1 gap-1 bg-slate-100/80 rounded-xl w-fit border border-slate-200/50 overflow-x-auto no-scrollbar">
                     {TABS.map((tab) => {
                         const Icon = tab.icon;

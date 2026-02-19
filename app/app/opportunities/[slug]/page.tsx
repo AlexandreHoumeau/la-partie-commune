@@ -17,7 +17,7 @@ export default async function OpportunityPage({ params }: { params: { slug: stri
 
             <main className="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden">
                 {/* Zone de contenu principale */}
-                <div className="lg:col-span-4 flex flex-col overflow-y-auto px-4 lg:px-8 py-6">
+                <div className="lg:col-span-4 flex flex-col overflow-y-auto lg:px-8 py-6">
                     <OpportunityPageContent opportunity={opportunity} />
                 </div>
 
