@@ -1,117 +1,197 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getTrackingLinksWithStats } from "@/actions/tracking.server"; // Note le changement de fonction
-import { BarChart3, MousePointer, Globe, Eye, MailCheck } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { getTrackingLinkAnalytics } from "@/actions/tracking.server";
+import {
+    Smartphone,
+    Monitor,
+    Tablet,
+    Activity,
+    Globe,
+    MousePointer2,
+    Clock,
+    Users,
+    ChevronRight,
+    Zap,
+    MapPin
+} from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function OpportunityAnalytics({ opportunityId }: { opportunityId: string }) {
-    const [links, setLinks] = useState<any[]>([]);
+    const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        loadAnalytics();
+        const load = async () => {
+            setIsLoading(true);
+            const result = await getTrackingLinkAnalytics(opportunityId);
+            if (result.success) setData(result.data);
+            setIsLoading(false);
+        };
+        load();
     }, [opportunityId]);
 
-    const loadAnalytics = async () => {
-        setIsLoading(true);
-        const result = await getTrackingLinksWithStats(opportunityId);
-        if (result.success) {
-            setLinks(result.data);
-        }
-        setIsLoading(false);
-    };
+    if (isLoading) return <AnalyticsSkeleton />;
+    if (!data) return <div className="p-10 text-center text-slate-500">Données indisponibles.</div>;
 
-    const totalClicks = links.reduce((sum, link) => sum + (link.click_count || 0), 0);
-    const totalOpens = links.reduce((sum, link) => sum + (link.open_count || 0), 0);
-
+    const { links, clicks, analytics } = data;
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Carte OUVERTURES (Nouveau) */}
-                <Card className="border-indigo-100 bg-indigo-50/20">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-indigo-600 flex items-center gap-2">
-                            <Eye className="h-4 w-4" />
-                            Emails Ouverts
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-indigo-900">{totalOpens}</div>
-                        <p className="text-xs text-indigo-500 mt-1">Nombre total d'ouvertures</p>
-                    </CardContent>
-                </Card>
-
-                {/* Carte CLICS */}
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <MousePointer className="h-4 w-4" />
-                            Total des clics
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold">{totalClicks}</div>
-                        <p className="text-xs text-gray-500 mt-1">Interactions avec vos liens</p>
-                    </CardContent>
-                </Card>
-
-                {/* Carte TAUX DE RÉACTION */}
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <MailCheck className="h-4 w-4" />
-                            Réactivité
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold text-emerald-600">
-                            {totalOpens > 0 ? Math.round((totalClicks / totalOpens) * 100) : 0}%
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">Clics par rapport aux ouvertures</p>
-                    </CardContent>
-                </Card>
+        <div className="space-y-8 animate-in fade-in duration-500">
+            {/* --- HEADER STATUT --- */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-slate-900">Vue d'ensemble des liens</h2>
+                        <Badge className="bg-blue-50 text-blue-700 border-blue-100">
+                            {analytics.activeLinksCount} actifs / {links.length} total
+                        </Badge>
+                    </div>
+                    <p className="text-sm text-slate-500 flex items-center gap-2">
+                        <Activity className="h-3 w-3" /> Données cumulées pour cette opportunité
+                    </p>
+                </div>
+                <div className="flex gap-3">
+                    {/* On peut afficher les domaines ou une info globale */}
+                    <div className="text-right hidden md:block">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Dernière activité</p>
+                        <p className="text-sm font-medium text-slate-600">
+                            {analytics.lastClickedAt ? new Date(analytics.lastClickedAt).toLocaleDateString() : 'Aucune'}
+                        </p>
+                    </div>
+                </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Performance par campagne</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {isLoading ? (
-                        <p className="text-center py-8">Chargement...</p>
-                    ) : (
-                        <div className="space-y-6">
-                            {links.map((link) => (
-                                <div key={link.id} className="space-y-3">
-                                    <div className="flex justify-between items-end">
-                                        <div>
-                                            <h4 className="font-bold text-slate-900">{link.campaign_name || `Lien ${link.short_code}`}</h4>
-                                            <p className="text-xs text-slate-400">Créé le {new Date(link.created_at).toLocaleDateString()}</p>
+            {/* --- METRICS GRID --- */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                    { label: "Total Interactions", value: analytics.totalClicks, icon: MousePointer2, color: "text-blue-600", bg: "bg-blue-50" },
+                    { label: "Prospects Uniques", value: analytics.uniqueClicks, icon: Users, color: "text-indigo-600", bg: "bg-indigo-50" },
+                    { label: "Localisation Top", value: Object.keys(analytics.countryBreakdown)[0] || "N/A", icon: MapPin, color: "text-rose-600", bg: "bg-rose-50" },
+                    { label: "Dernier Clic", value: analytics.lastClickedAt ? new Date(analytics.lastClickedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--:--", icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+                ].map((stat, i) => (
+                    <Card key={i} className="border-none shadow-sm bg-white overflow-hidden group hover:ring-1 hover:ring-slate-200 transition-all">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                                <div className={`${stat.bg} ${stat.color} p-2 rounded-lg`}>
+                                    <stat.icon className="h-5 w-5" />
+                                </div>
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Real-time</span>
+                            </div>
+                            <div className="mt-4">
+                                <h3 className="text-2xl font-black text-slate-900">{stat.value}</h3>
+                                <p className="text-xs font-medium text-slate-500">{stat.label}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* --- COMPORTEMENT (DISTRIBUTION) --- */}
+                <div className="space-y-6">
+                    <Card className="border-none shadow-sm">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                <Zap className="h-4 w-4 text-amber-500" /> Plateformes
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-5">
+                            {Object.entries(analytics.deviceBreakdown).length > 0 ? Object.entries(analytics.deviceBreakdown).map(([device, count]: any) => (
+                                <div key={device} className="space-y-2">
+                                    <div className="flex justify-between items-center text-xs">
+                                        <div className="flex items-center gap-2 text-slate-600 capitalize">
+                                            {device === 'Mobile' ? <Smartphone className="h-3 w-3" /> : device === 'Desktop' ? <Monitor className="h-3 w-3" /> : <Tablet className="h-3 w-3" />}
+                                            {device}
                                         </div>
-                                        <div className="flex gap-4 text-sm font-medium">
-                                            <span className="text-indigo-600">{link.open_count} ouvertures</span>
-                                            <span className="text-blue-600">{link.click_count} clics</span>
-                                        </div>
+                                        <span className="font-bold text-slate-900">{Math.round((count / analytics.totalClicks) * 100)}%</span>
                                     </div>
-                                    
-                                    {/* Double barre de progression */}
-                                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden flex">
-                                        <div 
-                                            className="bg-indigo-400 h-full border-r border-white" 
-                                            style={{ width: `${totalOpens > 0 ? (link.open_count / totalOpens) * 100 : 0}%` }}
-                                        />
-                                        <div 
-                                            className="bg-blue-500 h-full" 
-                                            style={{ width: `${totalClicks > 0 ? (link.click_count / totalClicks) * 100 : 0}%` }}
+                                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-slate-900 rounded-full transition-all duration-1000"
+                                            style={{ width: `${(count / analytics.totalClicks) * 100}%` }}
                                         />
                                     </div>
                                 </div>
-                            ))}
+                            )) : <p className="text-xs text-slate-400 italic">Aucune donnée</p>}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-none shadow-sm bg-slate-900 text-white">
+                        <CardContent className="p-6">
+                            <div className="flex items-center gap-2 mb-4 text-slate-400">
+                                <Activity className="h-4 w-4" />
+                                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Quick Insight</span>
+                            </div>
+                            <p className="text-sm leading-relaxed text-slate-300">
+                                La majorité de vos prospects consultent vos liens sur <span className="text-white font-bold">{Object.keys(analytics.deviceBreakdown)[0] || "Desktop"}</span>.
+                                Assurez-vous que votre landing page est optimisée pour ce support.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* --- LIVE ACTIVITY FEED --- */}
+                <Card className="lg:col-span-2 border-none shadow-sm bg-white overflow-hidden">
+                    <CardHeader className="border-b border-slate-50 flex flex-row items-center justify-between py-4 px-6">
+                        <CardTitle className="text-sm font-bold">Flux d'activité en direct</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Updates</span>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="divide-y divide-slate-50 max-h-[450px] overflow-y-auto">
+                            {clicks.length > 0 ? clicks.map((click: any, idx: number) => (
+                                <div key={idx} className="flex items-center justify-between p-4 px-6 hover:bg-slate-50/50 transition-colors group">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-10 w-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                            {click.device_type === 'Mobile' ? <Smartphone className="h-5 w-5 text-blue-500" /> : <Monitor className="h-5 w-5 text-indigo-500" />}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-800">{click.ip_address}</p>
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-medium text-slate-500 border-slate-200">
+                                                    {click.os_type}
+                                                </Badge>
+                                                <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                                    <MapPin className="h-2 w-2" /> {click.country_code || 'Inconnu'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs font-bold text-slate-900">{new Date(click.clicked_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                        <p className="text-[10px] text-slate-400">{new Date(click.clicked_at).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="p-12 text-center text-slate-400 text-sm italic">Aucun clic enregistré pour le moment.</div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
+}
+
+function AnalyticsSkeleton() {
+    return (
+        <div className="space-y-8 animate-pulse">
+            <div className="h-24 bg-white rounded-2xl border border-slate-100" />
+            <div className="grid grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((i) => <div key={i} className="h-32 bg-white rounded-xl shadow-sm" />)}
+            </div>
+            <div className="grid grid-cols-3 gap-6">
+                <div className="h-[400px] bg-white rounded-xl" />
+                <div className="col-span-2 h-[400px] bg-white rounded-xl" />
+            </div>
         </div>
     );
 }

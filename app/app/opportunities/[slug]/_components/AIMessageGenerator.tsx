@@ -7,8 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { OpportunityAIContext } from "@/lib/email_generator/utils";
 import { ContactVia } from "@/lib/validators/oppotunities";
-import { AlertCircle, CheckCircle2, Copy, Loader2, Mail, MessageSquare, Wand2, Save, LinkedinIcon, Instagram } from "lucide-react";
-import { useState, useTransition, useEffect, useRef } from "react";
+import { AlertCircle, CheckCircle2, Copy, Instagram, LinkedinIcon, Loader2, Mail, Save, Wand2 } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 export function AIMessageGenerator({ opportunity }: { opportunity: OpportunityAIContext }) {
@@ -110,31 +110,6 @@ export function AIMessageGenerator({ opportunity }: { opportunity: OpportunityAI
 			toast.error("Erreur lors de la mise à jour");
 		}
 	};
-
-	// const handleSubmit = async (e: React.FormEvent) => {
-	// 	e.preventDefault();
-	// 	// setIsSaved(false);
-	// 	// setMessageId(null); // Reset message ID to create a new one
-	// 	// startTransition(async () => {
-	// 	//     const formData = new FormData(e.currentTarget as HTMLFormElement);
-	// 	//     try {
-	// 	//         const result = await generateOpportunityMessage(null, formData, profile?.agency_id);
-	// 	//         if (result.error || !result.body) {
-	// 	//             setState({ subject: null, body: null, error: result.error, id: null });
-	// 	//             toast.error(result.error || "Erreur de génération");
-	// 	//             return;
-	// 	//         }
-	// 	//         setState({ ...result, error: null });
-	// 	//         setEditedSubject(result.subject || "");
-	// 	//         setEditedBody(result.body || "");
-	// 	//         setHasUnsavedChanges(false);
-	// 	//         toast.success("Message généré avec succès!");
-	// 	//     } catch (error) {
-	// 	//         setState({ subject: null, body: null, error: "Erreur lors de la génération", id: null });
-	// 	//         toast.error("Erreur lors de la génération");
-	// 	//     }
-	// 	// });
-	// };
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
