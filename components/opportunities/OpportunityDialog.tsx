@@ -51,7 +51,8 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { Building2, FileText, Mail, MapPin, Phone, Globe, Briefcase, Check, ChevronsUpDown } from "lucide-react";
-import { BUSINESS_SECTORS, cn } from "@/lib/utils";
+import { BUSINESS_SECTORS } from "@/utils/business-sectors";
+import { cn } from "@/lib/utils";
 
 interface OpportunityDialogProps {
 	open: boolean;

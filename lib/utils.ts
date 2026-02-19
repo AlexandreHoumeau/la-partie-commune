@@ -37,48 +37,6 @@ export async function getUniqueSlug(
   return slug;
 }
 
-export const BUSINESS_SECTORS = [
-  "Agence de communication",
-  "Agence immobilière",
-  "Agriculture",
-  "Alimentation",
-  "Architecture",
-  "Artisanat",
-  "Assurance",
-  "Automobile",
-  "Banque",
-  "BTP / Construction",
-  "Cabinet d'avocats",
-  "Commerce",
-  "Communication",
-  "Conseil",
-  "Culture",
-  "E-commerce",
-  "Éducation",
-  "Électronique",
-  "Énergie",
-  "Environnement",
-  "Finance",
-  "Hôtellerie",
-  "Immobilier",
-  "Industrie",
-  "Informatique",
-  "Juridique",
-  "Logistique",
-  "Marketing",
-  "Médias",
-  "Mode",
-  "Restauration",
-  "Santé",
-  "Services",
-  "Sport",
-  "Technologie",
-  "Télécommunications",
-  "Tourisme",
-  "Transport",
-];
-
-
 // Helper pour les initiales des avatars
 export const getInitials = (firstName?: string, lastName?: string, email?: string) => {
   if (firstName && lastName) return `${firstName[0]}${lastName[0]}`.toUpperCase();
