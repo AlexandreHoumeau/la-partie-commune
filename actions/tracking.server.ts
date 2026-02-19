@@ -72,29 +72,31 @@ export async function getTrackingLinks(opportunityId: string) {
     }
 }
 
-export async function getTrackingLinkAnalytics(linkId: string) {
+export async function getTrackingLinkAnalytics(opportunityId: string) {
     const supabase = await createClient();
 
     try {
-        // Get link details
-        const { data: link, error: linkError } = await supabase
+        // 1. Récupérer TOUS les liens de l'opportunité
+        const { data: links, error: linkError } = await supabase
             .from("tracking_links")
             .select("*")
-            .eq("id", linkId)
-            .single();
+            .eq("opportunity_id", opportunityId);
 
         if (linkError) throw linkError;
+        if (!links || links.length === 0) return { success: false, error: "Aucun lien trouvé" };
 
-        // Get clicks
+        const linkIds = links.map(l => l.id);
+
+        // 2. Récupérer TOUS les clics pour ces liens
         const { data: clicks, error: clicksError } = await supabase
             .from("tracking_clicks")
             .select("*")
-            .eq("tracking_link_id", linkId)
+            .in("tracking_link_id", linkIds)
             .order("clicked_at", { ascending: false });
 
         if (clicksError) throw clicksError;
 
-        // Calculate analytics
+        // 3. Calculs agrégés
         const totalClicks = clicks?.length || 0;
         const uniqueIPs = new Set(clicks?.map(c => c.ip_address)).size;
 
@@ -110,17 +112,27 @@ export async function getTrackingLinkAnalytics(linkId: string) {
             return acc;
         }, {} as Record<string, number>);
 
+        // Trouver la date du dernier clic parmi tous les liens
+        const lastClickedAt = links.reduce((latest, current) => {
+            if (!current.last_clicked_at) return latest;
+            if (!latest) return current.last_clicked_at;
+            return new Date(current.last_clicked_at) > new Date(latest)
+                ? current.last_clicked_at
+                : latest;
+        }, null as string | null);
+
         return {
             success: true,
             data: {
-                link,
+                links, // On renvoie la liste complète
                 clicks: clicks || [],
                 analytics: {
                     totalClicks,
                     uniqueClicks: uniqueIPs,
                     deviceBreakdown,
                     countryBreakdown,
-                    lastClickedAt: link.last_clicked_at,
+                    lastClickedAt,
+                    activeLinksCount: links.filter(l => l.is_active).length
                 }
             }
         };
@@ -147,36 +159,5 @@ export async function toggleTrackingLink(linkId: string, isActive: boolean) {
     } catch (error) {
         console.error("Error toggling link:", error);
         return { success: false, error: "Une erreur est survenue" };
-    }
-}
-
-// Dans actions/tracking.server.ts
-
-export async function getTrackingLinksWithStats(opportunityId: string) {
-    const supabase = await createClient();
-
-    try {
-        // On récupère les liens ET on compte les ouvertures via un count
-        const { data, error } = await supabase
-            .from("tracking_links")
-            .select(`
-                *,
-                tracking_opens(id)
-            `)
-            .eq("opportunity_id", opportunityId)
-            .order("created_at", { ascending: false });
-
-        if (error) throw error;
-
-        // On formate les données pour avoir un "open_count" facile à utiliser
-        const linksWithStats = data.map(link => ({
-            ...link,
-            open_count: link.tracking_opens?.length || 0
-        }));
-
-        return { success: true, data: linksWithStats };
-    } catch (error) {
-        console.error("Error fetching links with stats:", error);
-        return { success: false, data: [] };
     }
 }
