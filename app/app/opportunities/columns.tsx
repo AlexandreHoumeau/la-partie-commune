@@ -5,15 +5,14 @@ import { ContactVia, mapContactViaLabel, mapOpportunityStatusLabel, OpportunityS
 import { CONTACT_COLORS, STATUS_COLORS } from "@/utils/general";
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { Edit, MoreVertical, Star, Trash2 } from "lucide-react";
-import { Copy } from 'lucide-react';
+import { Edit, MoreHorizontal, Star, Trash2, Copy, ArrowUpDown, ExternalLink, Rocket } from "lucide-react";
 import { toast } from "sonner";
-import { ArrowUpDown } from "lucide-react"
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 type ColumnsProps = {
-    onStatusChange: (id: string, status: OpportunityStatus) => void;
+    onStatusChange: (id: string, status: OpportunityStatus, opp: OpportunityWithCompany) => void; // Ajout de l'objet complet
+    onConvert: (opp: OpportunityWithCompany) => void; // Nouvelle action
     onDeleteOpportunities: (ids: string[]) => void;
     editOpportunity: (opportunity: OpportunityWithCompany) => void;
     onFavoriteChange: (id: string, isFavorite: boolean) => void;
@@ -21,6 +20,7 @@ type ColumnsProps = {
 
 export const getColumns = ({
     onStatusChange,
+    onConvert,
     onDeleteOpportunities,
     editOpportunity,
     onFavoriteChange
@@ -29,15 +29,23 @@ export const getColumns = ({
             header: "Entreprise",
             accessorKey: "company.name",
             cell: ({ row }) => {
-                const opportunity = row.original
+                const opportunity = row.original;
+                const companyName = opportunity.company?.name || "Inconnu";
+                const initial = companyName.charAt(0).toUpperCase();
+
                 return (
-                    <div className="flex flex-col">
-                        <Link href={`opportunities/${opportunity.slug}`} className="font-bold text-slate-900 hover:text-blue-600 transition-colors">
-                            {opportunity.company?.name}
-                        </Link>
-                        <span className="text-[10px] text-slate-400 uppercase font-medium tracking-tight">
-                            {opportunity.company?.business_sector || "Secteur inconnu"}
-                        </span>
+                    <div className="flex items-center gap-3">
+                        <div className="flex shrink-0 h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600 font-bold text-sm border border-blue-100/50">
+                            {initial}
+                        </div>
+                        <div className="flex flex-col max-w-[200px]">
+                            <Link href={`opportunities/${opportunity.slug}`} className="font-bold text-sm text-slate-900 hover:text-blue-600 transition-colors truncate">
+                                {companyName}
+                            </Link>
+                            <span className="text-[10px] text-slate-500 uppercase font-bold tracking-widest truncate">
+                                {opportunity.company?.business_sector || "Secteur inconnu"}
+                            </span>
+                        </div>
                     </div>
                 )
             }
@@ -46,11 +54,11 @@ export const getColumns = ({
             accessorKey: "company.email",
             header: "Contact",
             cell: ({ row }) => {
-                const email = row.original.company?.email
-                if (!email) return <span className="text-slate-300 italic text-xs">Pas d'email</span>;
+                const email = row.original.company?.email;
+                if (!email) return <span className="text-slate-400 italic text-xs">Pas d'email</span>;
                 return (
                     <div
-                        className="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-blue-600 transition-colors group"
+                        className="flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer hover:text-blue-600 transition-colors group"
                         onClick={() => {
                             navigator.clipboard.writeText(email);
                             toast.success("Email copié");
@@ -72,26 +80,27 @@ export const getColumns = ({
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Badge className={cn("cursor-pointer px-2.5 py-1 rounded-md border-none font-bold text-[10px] uppercase tracking-tighter", STATUS_COLORS[status])}>
+                            <Badge className={cn("cursor-pointer px-2.5 py-1 rounded-md border-none font-bold text-[10px] uppercase tracking-widest hover:opacity-80 transition-opacity", STATUS_COLORS[status])}>
                                 {mapOpportunityStatusLabel[status]}
                             </Badge>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="w-48 rounded-xl shadow-xl border-slate-100">
+                        <DropdownMenuContent align="start" className="w-48 rounded-xl shadow-xl border-slate-100 p-1">
                             {Object.entries(mapOpportunityStatusLabel).map(([key, label]) => (
-                                <DropdownMenuItem key={key} onClick={() => onStatusChange(id, key as OpportunityStatus)} className="focus:bg-slate-50">
-                                    <Badge className={cn("text-[10px] border-none uppercase", STATUS_COLORS[key as OpportunityStatus])}>
-                                        {label}
-                                    </Badge>
+                                <DropdownMenuItem key={key} onClick={() => onStatusChange(id, key as OpportunityStatus, row.original)} className="focus:bg-slate-50 rounded-lg cursor-pointer my-0.5">
+                                    <div className="flex items-center gap-2">
+                                        <div className={`h-2 w-2 rounded-full ${STATUS_COLORS[key as OpportunityStatus].replace("text-", "bg-").split(" ")[0]}`} />
+                                        <span className="text-xs font-semibold">{label}</span>
+                                    </div>
                                 </DropdownMenuItem>
                             ))}
                         </DropdownMenuContent>
-                    </DropdownMenu>
+                    </DropdownMenu >
                 );
             },
         },
         {
             accessorKey: "contact_via",
-            header: "Contact Via",
+            header: "Canal",
             filterFn: (row, columnId, value: ContactVia[]) => {
                 if (!value || value.length === 0) return true;
                 return value.includes(row.getValue(columnId));
@@ -99,16 +108,26 @@ export const getColumns = ({
             cell: ({ row }) => {
                 const contact_via: ContactVia = row.getValue("contact_via");
                 const label = mapContactViaLabel[contact_via];
-                const color = CONTACT_COLORS[contact_via] || "gray";
+                const color = CONTACT_COLORS[contact_via] || "bg-slate-100 text-slate-600";
 
                 return (
-                    <Badge
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${color}`}
-                    >
+                    <Badge variant="secondary" className={cn("px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-widest border-none shadow-none", color)}>
                         {label}
                     </Badge>
                 );
-
+            }
+        },
+        {
+            accessorKey: "description",
+            header: "Aperçu",
+            cell: ({ row }) => {
+                const description: string = row.getValue("description");
+                if (!description) return <span className="text-slate-300 text-xs italic">-</span>;
+                return (
+                    <p className="text-xs text-slate-500 line-clamp-2 max-w-[250px] leading-relaxed">
+                        {description}
+                    </p>
+                )
             }
         },
         {
@@ -117,30 +136,22 @@ export const getColumns = ({
                 return (
                     <Button
                         variant="ghost"
-                        className="cursor-pointer"
+                        className="h-8 px-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest hover:bg-slate-50 hover:text-slate-700"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
-                        Crée le
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        Création
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
                     </Button>
                 )
             },
-
             cell: ({ row }) => {
                 const date = new Date(row.getValue("created_at"));
-                const formattedDate = dayjs(date).format("DD MMM YYYY");
-                return <div className="font-medium">{formattedDate}</div>
+                return (
+                    <div className="text-xs font-medium text-slate-500">
+                        {dayjs(date).format("DD MMM YYYY")}
+                    </div>
+                )
             },
-
-        },
-        {
-            accessorKey: "description",
-            header: "Description",
-            cell: ({ row }) => {
-                const descirption: string = row.getValue("description");
-                return <div className="font-medium text-wrap">{descirption}</div>
-
-            }
         },
         {
             id: "actions",
@@ -148,37 +159,45 @@ export const getColumns = ({
                 const opportunity = row.original
 
                 return (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button className="h-8 w-8" size="icon" variant="ghost">
-                                <MoreVertical className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                            <DropdownMenuItem onClick={() => editOpportunity(opportunity)}>
-                                <Edit />
-                                Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={async () => {
-                                const formattedString = `Nom: ${opportunity.company?.name}; Webiste: ${opportunity.company?.website}; Email: ${opportunity.company?.email}; PhoneNumber: ${opportunity.company?.phone_number}; Description: ${opportunity.description}; Secteur d'activité: ${opportunity.company?.business_sector}; A contacter via: ${opportunity.contact_via}; Statut: ${opportunity.status}`;
-                                await navigator.clipboard.writeText(JSON.stringify(formattedString));
-                                toast.success("Copié dans l'opportunité presse-papiers", { position: "top-right" });
-
-                            }}>
-                                <Copy />
-                                Copy
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onFavoriteChange(opportunity.id, !opportunity.is_favorite)}>
-                                <Star />
-                                {opportunity.is_favorite ? "Unfavorite" : "Favorite"}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem variant="destructive" onClick={() => onDeleteOpportunities([opportunity.id])}>
-                                <Trash2 />
-                                Delete
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="flex justify-end pr-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button className="h-8 w-8 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-100" size="icon" variant="ghost">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 rounded-xl shadow-xl border-slate-100 p-1">
+                                <DropdownMenuItem onClick={() => editOpportunity(opportunity)} className="rounded-lg cursor-pointer">
+                                    <Edit className="h-4 w-4 mr-2 text-slate-400" />
+                                    <span className="text-sm font-medium">Modifier</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={async () => {
+                                    const formattedString = `Nom: ${opportunity.company?.name}\nEmail: ${opportunity.company?.email}\nSecteur: ${opportunity.company?.business_sector}`;
+                                    await navigator.clipboard.writeText(formattedString);
+                                    toast.success("Infos copiées");
+                                }} className="rounded-lg cursor-pointer">
+                                    <Copy className="h-4 w-4 mr-2 text-slate-400" />
+                                    <span className="text-sm font-medium">Copier les infos</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onFavoriteChange(opportunity.id, !opportunity.is_favorite)} className="rounded-lg cursor-pointer">
+                                    <Star className={cn("h-4 w-4 mr-2", opportunity.is_favorite ? "text-yellow-400 fill-yellow-400" : "text-slate-400")} />
+                                    <span className="text-sm font-medium">{opportunity.is_favorite ? "Retirer des favoris" : "Ajouter aux favoris"}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    onClick={() => onConvert(opportunity)}
+                                    className="rounded-lg cursor-pointer text-indigo-600 focus:bg-indigo-50 focus:text-indigo-700 font-bold"
+                                >
+                                    <Rocket className="h-4 w-4 mr-2" />
+                                    <span>Convertir en Projet</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="bg-slate-100" />
+                                <DropdownMenuItem variant="destructive" onClick={() => onDeleteOpportunities([opportunity.id])} className="rounded-lg cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    <span className="text-sm font-medium">Supprimer</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 )
             },
         }
