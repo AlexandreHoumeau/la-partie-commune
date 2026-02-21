@@ -146,3 +146,162 @@ export async function updateTaskDetails(taskId: string, data: any) {
         return { success: false, error: error.message };
     }
 }
+
+// Ajoute l'import de crypto en haut de ton fichier si besoin, ou utilise l'API Web native
+// import { randomUUID } from "crypto"; 
+
+export async function updateProjectSettings(projectId: string, data: any) {
+    const supabase = await createClient();
+
+    try {
+        const { error } = await supabase
+            .from("projects")
+            .update({
+                name: data.name,
+                description: data.description,
+                start_date: data.start_date,
+                figma_url: data.figma_url,
+                github_url: data.github_url,
+                deployment_url: data.deployment_url,
+                updated_at: new Date().toISOString()
+            })
+            .eq("id", projectId);
+
+        if (error) throw error;
+        
+        revalidatePath("/app/projects");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Erreur mise à jour projet:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function generateProjectMagicLink(projectId: string) {
+    const supabase = await createClient();
+
+    try {
+        // Génère un token unique complexe (ex: "123e4567-e89b-12d3-a456-426614174000")
+        const newToken = crypto.randomUUID();
+
+        const { error } = await supabase
+            .from("projects")
+            .update({ 
+                magic_token: newToken,
+                updated_at: new Date().toISOString()
+            })
+            .eq("id", projectId);
+
+        if (error) throw error;
+        
+        revalidatePath("/app/projects");
+        return { success: true, token: newToken };
+    } catch (error: any) {
+        console.error("Erreur génération token:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+// --- SECTION CHASSEUR DE CONTENUS (CHECKLIST) ---
+
+export async function getProjectChecklists(projectId: string) {
+    const supabase = await createClient();
+    try {
+        const { data, error } = await supabase
+            .from("project_checklists")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("created_at", { ascending: true });
+
+        if (error) throw error;
+        return { success: true, data: data || [] };
+    } catch (error: any) {
+        console.error("Erreur fetch checklists:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function createChecklistItem(projectId: string, data: { title: string, description?: string, expected_type: string }) {
+    const supabase = await createClient();
+    try {
+        const { error } = await supabase
+            .from("project_checklists")
+            .insert({
+                project_id: projectId,
+                title: data.title,
+                description: data.description,
+                expected_type: data.expected_type,
+                status: 'pending'
+            });
+
+        if (error) throw error;
+        revalidatePath("/app/projects");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Erreur création checklist:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function deleteChecklistItem(itemId: string) {
+    const supabase = await createClient();
+    try {
+        const { error } = await supabase.from("project_checklists").delete().eq("id", itemId);
+        if (error) throw error;
+        revalidatePath("/app/projects");
+        return { success: true };
+    } catch (error: any) {
+        console.error("Erreur suppression checklist:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function togglePortalStatus(projectId: string, isActive: boolean) {
+    const supabase = await createClient();
+    try {
+        const { error } = await supabase
+            .from("projects")
+            .update({ 
+                is_portal_active: isActive,
+                updated_at: new Date().toISOString()
+            })
+            .eq("id", projectId);
+
+        if (error) throw error;
+        revalidatePath("/app/projects");
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+// --- SECTION STATISTIQUES (OVERVIEW) ---
+export async function getProjectOverviewStats(projectId: string) {
+    const supabase = await createClient();
+    try {
+        // 1. Récupérer le statut des tâches
+        const { data: tasks } = await supabase
+            .from('tasks')
+            .select('status')
+            .eq('project_id', projectId);
+
+        // 2. Récupérer le statut de la checklist client
+        const { data: checklists } = await supabase
+            .from('project_checklists')
+            .select('status')
+            .eq('project_id', projectId);
+
+        const totalTasks = tasks?.length || 0;
+        const doneTasks = tasks?.filter(t => t.status === 'done').length || 0;
+
+        const totalChecklist = checklists?.length || 0;
+        const doneChecklist = checklists?.filter(c => c.status === 'uploaded').length || 0;
+
+        return { 
+            success: true, 
+            stats: { totalTasks, doneTasks, totalChecklist, doneChecklist } 
+        };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

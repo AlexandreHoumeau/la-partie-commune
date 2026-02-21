@@ -10,8 +10,9 @@ export async function getProjectTasks(projectId: string) {
             .from("tasks")
             .select(`
                 *,
-                assignee:profiles(id, first_name, last_name)
-            `)
+                assignee:profiles!tasks_assignee_id_fkey(*),
+                creator:profiles!tasks_created_by_fkey(*)
+                `)
             .eq("project_id", projectId)
             .order("position", { ascending: true });
 
@@ -24,8 +25,8 @@ export async function getProjectTasks(projectId: string) {
 }
 
 export async function updateTaskStatusAndPosition(
-    taskId: string, 
-    newStatus: string, 
+    taskId: string,
+    newStatus: string,
     newPosition: number,
     // Optionnel : si tu veux réordonner les autres tâches en DB
 ) {
@@ -34,7 +35,7 @@ export async function updateTaskStatusAndPosition(
     try {
         const { error } = await supabase
             .from("tasks")
-            .update({ 
+            .update({
                 status: newStatus,
                 position: newPosition,
                 updated_at: new Date().toISOString()
@@ -45,6 +46,18 @@ export async function updateTaskStatusAndPosition(
         return { success: true };
     } catch (error: any) {
         console.error("Erreur update task:", error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function deleteTask(taskId: string) {
+    const supabase = await createClient();
+    try {
+        const { error } = await supabase.from("tasks").delete().eq("id", taskId);
+        if (error) throw error;
+        return { success: true };
+    } catch (error: any) {
+        console.error("Erreur suppression tâche:", error);
         return { success: false, error: error.message };
     }
 }
