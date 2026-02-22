@@ -11,11 +11,12 @@ import { Loader2, AlignLeft, Bug, LayoutTemplate, PenTool, Settings, ArrowUp, Ar
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { cn } from "@/lib/utils";
 import { createTask, updateTaskDetails } from "@/actions/project.server";
+import { deleteTask } from "@/actions/task.server";
 
 interface TaskSlideOverProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    task: any | null; // null = Mode Création
+    task: any | null;
     projectId: string;
     onSaved: () => void;
     initialStatus?: string;
@@ -24,15 +25,12 @@ interface TaskSlideOverProps {
 export function TaskSlideOver({ open, onOpenChange, task, projectId, onSaved, initialStatus }: TaskSlideOverProps) {
     const { profile } = useUserProfile();
     const [isLoading, setIsLoading] = useState(false);
-
-    // Form State
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [status, setStatus] = useState(initialStatus || "todo");
     const [priority, setPriority] = useState("medium");
     const [type, setType] = useState("feature");
 
-    // Remplir les champs si on édite
     useEffect(() => {
         if (task) {
             setTitle(task.title || "");
@@ -41,7 +39,6 @@ export function TaskSlideOver({ open, onOpenChange, task, projectId, onSaved, in
             setPriority(task.priority || "medium");
             setType(task.type || "feature");
         } else {
-            // Reset complet pour une nouvelle tâche
             setTitle(""); setDescription(""); setStatus("todo"); setPriority("medium"); setType("feature");
         }
     }, [task, open]);
@@ -64,14 +61,28 @@ export function TaskSlideOver({ open, onOpenChange, task, projectId, onSaved, in
 
         if (result.success) {
             toast.success(task ? "Ticket mis à jour" : "Ticket créé");
-            onSaved(); // Déclenche le rafraîchissement du Kanban
+            onSaved();
             onOpenChange(false);
         } else {
             toast.error("Erreur lors de l'enregistrement");
         }
     };
 
-    // Configuration des icônes pour le rendu visuel
+    const handleDelete = async () => {
+        setIsLoading(true)
+        const result = await deleteTask(task.id)
+        setIsLoading(false);
+
+        if (result.success) {
+            toast.success("Ticket supprimé");
+            onSaved();
+            onOpenChange(false);
+        } else {
+            toast.error("Erreur lors de la supression");
+        }
+    }
+
+
     const TypeIcon = { feature: AlignLeft, bug: Bug, design: LayoutTemplate, content: PenTool, setup: Settings }[type] as any;
     const PriorityIcon = { low: ArrowDown, medium: Equal, high: ArrowUp, urgent: AlertOctagon }[priority] as any;
     const StatusIcon = { todo: Inbox, in_progress: PlayCircle, review: Clock, done: CheckCircle2 }[status] as any;
@@ -82,14 +93,22 @@ export function TaskSlideOver({ open, onOpenChange, task, projectId, onSaved, in
             <SheetContent className="sm:max-w-4xl p-0 flex flex-col bg-white border-l border-slate-200 shadow-2xl [&>button:first-of-type]:hidden">
 
                 {/* Header du Slide-over */}
-                <div className="px-10 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="px-8 py-4 border-b border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
                         <span>{task ? `TCK-${task.id.split('-')[0].substring(0, 4)}` : "Nouveau Ticket"}</span>
                     </div>
-                    <Button onClick={handleSave} disabled={isLoading} className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-9 px-6 text-xs font-bold shadow-sm transition-all active:scale-95">
-                        {isLoading && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}
-                        {task ? "Enregistrer" : "Créer le ticket"}
-                    </Button>
+                    <div className="flex gap-4">
+
+                        <Button variant="default" onClick={handleSave} disabled={isLoading} className="px-6 text-xs font-bold shadow-sm transition-all active:scale-95">
+                            {isLoading && <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />}
+                            {task ? "Enregistrer" : "Créer le ticket"}
+                        </Button>
+                        {task && (
+                            <Button variant="destructive" onClick={handleDelete} disabled={isLoading} className="px-6 text-xs font-bold shadow-sm transition-all active:scale-95">
+                                Suprrimer
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Contenu divisé en 2 colonnes */}
