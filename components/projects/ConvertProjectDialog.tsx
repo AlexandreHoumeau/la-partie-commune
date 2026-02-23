@@ -6,18 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createProjectFromOpportunity } from "@/actions/project.server";
+import type { OpportunityForProject } from "@/lib/validators/project";
 import { toast } from "sonner";
 import { Loader2, Rocket, Figma, Github, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export function ConvertProjectDialog({ 
-    opportunity, 
-    open, 
-    onOpenChange 
-}: { 
-    opportunity: any | null, 
-    open: boolean, 
-    onOpenChange: (v: boolean) => void 
+export function ConvertProjectDialog({
+    opportunity,
+    open,
+    onOpenChange
+}: {
+    opportunity: (OpportunityForProject & { name: string }) | null,
+    open: boolean,
+    onOpenChange: (v: boolean) => void
 }) {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
