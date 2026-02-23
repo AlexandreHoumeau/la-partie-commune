@@ -67,16 +67,11 @@ export function DataTable<TData, TValue>({
         <DataTableToolbar
           table={table}
           searchInput={searchInput}
-          setSearchInput={(val) => {
-            setSearchInput(val);
-          }}
+          setSearchInput={setSearchInput}
           statuses={statuses}
           contactVia={contactVia}
           onFilterChange={onFilterChange}
-          onReset={() => {
-            setSearchInput("");
-            onReset();
-          }}
+          onReset={onReset}
         />
       </div>
 
