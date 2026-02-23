@@ -168,7 +168,7 @@ export async function updateProjectSettings(projectId: string, data: any) {
             .eq("id", projectId);
 
         if (error) throw error;
-        
+
         revalidatePath("/app/projects");
         return { success: true };
     } catch (error: any) {
@@ -186,14 +186,14 @@ export async function generateProjectMagicLink(projectId: string) {
 
         const { error } = await supabase
             .from("projects")
-            .update({ 
+            .update({
                 magic_token: newToken,
                 updated_at: new Date().toISOString()
             })
             .eq("id", projectId);
 
         if (error) throw error;
-        
+
         revalidatePath("/app/projects");
         return { success: true, token: newToken };
     } catch (error: any) {
@@ -261,7 +261,7 @@ export async function togglePortalStatus(projectId: string, isActive: boolean) {
     try {
         const { error } = await supabase
             .from("projects")
-            .update({ 
+            .update({
                 is_portal_active: isActive,
                 updated_at: new Date().toISOString()
             })
@@ -297,11 +297,105 @@ export async function getProjectOverviewStats(projectId: string) {
         const totalChecklist = checklists?.length || 0;
         const doneChecklist = checklists?.filter(c => c.status === 'uploaded').length || 0;
 
-        return { 
-            success: true, 
-            stats: { totalTasks, doneTasks, totalChecklist, doneChecklist } 
+        return {
+            success: true,
+            stats: { totalTasks, doneTasks, totalChecklist, doneChecklist }
         };
     } catch (error: any) {
         return { success: false, error: error.message };
     }
+}
+
+export async function createProject(data: any, agencyId: string) {
+    const supabase = await createClient();
+    let finalCompanyId = data.companyId;
+
+    // 1. Création de la nouvelle entreprise si demandé
+    if (data.isNewCompany && data.newCompanyData?.name) {
+        const { data: newCompany, error: companyError } = await supabase
+            .from("companies")
+            .insert({
+                name: data.newCompanyData.name,
+                email: data.newCompanyData.email || null,
+                phone_number: data.newCompanyData.phone_number || null, // Correction du nom de colonne
+                website: data.newCompanyData.website || null,
+                business_sector: data.newCompanyData.business_sector || null, // Correction du nom de colonne
+                agency_id: agencyId, // OBLIGATOIRE selon ton schéma
+            })
+            .select()
+            .single();
+
+        if (companyError) {
+            console.error("Erreur création entreprise:", companyError);
+            throw new Error("Erreur lors de la création de l'entreprise.");
+        }
+        finalCompanyId = newCompany.id;
+    }
+
+    // 2. Nettoyage du company_id pour Postgres (remplacer "none" ou "" par null)
+    const validCompanyId = (finalCompanyId && finalCompanyId !== "none") ? finalCompanyId : null;
+
+    // 3. Génération du slug du projet
+    const baseSlug = data.name.toLowerCase().trim().replace(/[\s\W-]+/g, '-');
+    const slug = `${baseSlug}-${Math.random().toString(36).substring(2, 6)}`;
+
+    // 4. Création du projet
+    const { data: project, error: projectError } = await supabase
+        .from("projects")
+        .insert({
+            name: data.name,
+            company_id: validCompanyId, // Sera bien un UUID ou null
+            agency_id: agencyId, // On relie le projet à l'agence aussi
+            slug: slug,
+            status: "active",
+        })
+        .select()
+        .single();
+
+    if (projectError) {
+        console.error("Erreur création projet:", projectError);
+        throw new Error("Erreur lors de la création du projet.");
+    }
+
+    revalidatePath("/app/projects");
+    return project;
+}
+
+export async function deleteProject(projectId: string): Promise<{ error?: string }> {
+    const supabase = await createClient()
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("agency_id, role")
+        .eq("id", user?.id)
+        .single()
+
+    if (profileError || !profile?.agency_id) {
+        return {
+            error: "Aucune agence associée à votre compte",
+        }
+    }
+
+    // Check if user has permission (admin only)
+    if (profile.role !== 'agency_admin') {
+        return {
+            error: "Vous n'avez pas les permissions pour modifier l'agence",
+        }
+    }
+
+    const { error } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", projectId)
+        .eq("agency_id", profile?.agency_id)
+
+    if (error) {
+        console.error("Error deleting project:", error)
+        return { error: "Erreur lors de la suppression du projet." }
+    }
+
+    revalidatePath("/app/projects")
+    return {}
 }
