@@ -1,5 +1,7 @@
 import * as z from "zod";
 
+// ─── Form schema (client-side) ─────────────────────────────────────────────
+
 export const newProjectSchema = z.object({
   name: z.string().min(2, "Le nom du projet est requis"),
   isNewCompany: z.boolean(),
@@ -22,3 +24,49 @@ export const newProjectSchema = z.object({
 });
 
 export type NewProjectFormValues = z.infer<typeof newProjectSchema>;
+
+// ─── Server action parameter types ────────────────────────────────────────
+
+export interface OpportunityForProject {
+  id: string;
+  agency_id: string;
+  company_id: string | null;
+  description?: string | null;
+  status: string;
+}
+
+export interface ProjectFromOpportunityData {
+  name: string;
+  start_date?: string;
+  figma_url?: string;
+  github_url?: string;
+}
+
+export interface TaskData {
+  title: string;
+  description?: string | null;
+  status?: string;
+  type?: string;
+  priority?: string;
+}
+
+export interface ProjectSettingsData {
+  name?: string;
+  description?: string | null;
+  start_date?: string | null;
+  figma_url?: string | null;
+  github_url?: string | null;
+  deployment_url?: string | null;
+}
+
+export interface ChecklistItemData {
+  title: string;
+  description?: string;
+  expected_type: string;
+}
+
+// ─── Shared server action return type ─────────────────────────────────────
+
+export type ActionResult<T = void> =
+  | { success: true; data: T }
+  | { success: false; error: string };

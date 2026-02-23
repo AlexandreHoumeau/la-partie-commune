@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner"; // Ou ton système de toast actuel
-import { Check, ChevronsUpDown, Plus, Building2, FolderKanban, Mail, Phone, Globe, MapPin } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, Building2, FolderKanban, Mail, Phone, Globe } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -72,15 +72,14 @@ export function NewProjectModal({
     const isNewCompany = form.watch("isNewCompany");
 
     async function onSubmit(data: NewProjectFormValues) {
-        try {
-            await createProject(data, agencyId); // Ajout du deuxième argument
-            toast.success("Projet créé avec succès !");
-            setOpen(false);
-            form.reset();
-        } catch (error) {
-            toast.error("Erreur lors de la création du projet.");
-            console.error(error);
+        const result = await createProject(data, agencyId);
+        if (!result.success) {
+            toast.error(result.error);
+            return;
         }
+        toast.success("Projet créé avec succès !");
+        setOpen(false);
+        form.reset();
     }
 
     return (
@@ -249,17 +248,30 @@ export function NewProjectModal({
                                                 />
                                             </div>
 
-                                            <FormField
-                                                control={form.control}
-                                                name="newCompanyData.website"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="flex items-center gap-2"><Globe className="w-3.5 h-3.5" /> Site Web</FormLabel>
-                                                        <FormControl><Input placeholder="https://..." className="bg-white" {...field} /></FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="newCompanyData.website"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel className="flex items-center gap-2"><Globe className="w-3.5 h-3.5" /> Site Web</FormLabel>
+                                                            <FormControl><Input placeholder="https://..." className="bg-white" {...field} /></FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="newCompanyData.business_sector"
+                                                    render={({ field }) => (
+                                                        <FormItem>
+                                                            <FormLabel>Secteur d'activité</FormLabel>
+                                                            <FormControl><Input placeholder="Ex: E-commerce" className="bg-white" {...field} /></FormControl>
+                                                            <FormMessage />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
                                         </div>
                                     )}
                                 </div>

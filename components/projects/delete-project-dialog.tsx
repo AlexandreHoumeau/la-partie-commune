@@ -29,7 +29,7 @@ export function DeleteProjectDialog({ projectId, projectName }: DeleteProjectDia
     function handleDelete() {
         startTransition(async () => {
             const result = await deleteProject(projectId)
-            if (!result.error) {
+            if (result.success) {
                 setOpen(false)
                 router.refresh()
             }

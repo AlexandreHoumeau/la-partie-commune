@@ -47,7 +47,7 @@ export function useOpportunities({ pageSize = 10, agencyId, enabled = true }: Us
     });
 
     // Fetch status counts (all opportunities, not filtered)
-    const { data: statusCounts, isLoading: isLoadingCounts } = useQuery({
+    const { data: statusCounts } = useQuery({
         queryKey: ["opportunities-status-counts", agencyId],
         queryFn: () => fetchOpportunityStatusCounts(agencyId),
         enabled: enabled && !!agencyId,
