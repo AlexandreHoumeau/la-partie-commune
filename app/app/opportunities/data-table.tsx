@@ -30,11 +30,12 @@ interface DataTableProps<TData, TValue> {
   onSearch: (search: string) => void;
   onFilterChange: (key: string, values: string[]) => void;
   onPagination: (page: number) => void;
+  onReset: () => void;
 }
 
 export function DataTable<TData, TValue>({
   columns, data, total, page, pageSize, search, statuses, contactVia,
-  isLoading, onSearch, onFilterChange, onPagination,
+  isLoading, onSearch, onFilterChange, onPagination, onReset,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [searchInput, setSearchInput] = React.useState(search);
@@ -66,10 +67,16 @@ export function DataTable<TData, TValue>({
         <DataTableToolbar
           table={table}
           searchInput={searchInput}
-          setSearchInput={setSearchInput}
+          setSearchInput={(val) => {
+            setSearchInput(val);
+          }}
           statuses={statuses}
           contactVia={contactVia}
           onFilterChange={onFilterChange}
+          onReset={() => {
+            setSearchInput("");
+            onReset();
+          }}
         />
       </div>
 
@@ -122,7 +129,7 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      {/* PAGINATION PREMIUM */}
+      {/* PAGINATION */}
       <div className="border-t border-slate-100 bg-slate-50/50 px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 mt-auto">
         <div className="text-xs font-medium text-slate-500">
           Affichage de <span className="text-slate-900 font-bold">{data.length}</span> sur <span className="text-slate-900 font-bold">{total}</span> opportunités
