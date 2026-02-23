@@ -19,8 +19,8 @@ export default function ProjectOverviewPage() {
     const loadStats = async () => {
         setIsLoadingStats(true);
         const result = await getProjectOverviewStats(project!.id);
-        if (result.success && result.stats) {
-            setStats(result.stats);
+        if (result.success) {
+            setStats(result.data);
         }
         setIsLoadingStats(false);
     };
