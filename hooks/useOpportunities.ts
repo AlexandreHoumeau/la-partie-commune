@@ -59,7 +59,6 @@ export function useOpportunities({ pageSize = 10, agencyId, enabled = true }: Us
     // Update URL function
     const updateURL = (updates: Record<string, string | string[]>) => {
         const params = new URLSearchParams(searchParams.toString());
-
         Object.entries(updates).forEach(([key, value]) => {
             if (Array.isArray(value)) {
                 if (value.length === 0 || (key === "status" && value.length === ALL_STATUSES.length) || (key === "contact_via" && value.length === ALL_CONTACT_VIA.length)) {
@@ -73,7 +72,7 @@ export function useOpportunities({ pageSize = 10, agencyId, enabled = true }: Us
                 params.delete(key);
             }
         });
-
+        // console.log(params)
         router.push(`${pathname}?${params.toString()}`);
     };
 
