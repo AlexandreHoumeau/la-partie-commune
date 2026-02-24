@@ -1,12 +1,12 @@
 'use server'
 
-import { createClient } from "@/lib/supabase/server"
-import { revalidatePath } from "next/cache"
-import { z } from "zod"
-import crypto from "crypto"
-import { Agency, inviteAgencyMemberSchema, InviteAgencyMemberState, UpdateAgencyState } from "@/lib/validators/agency"
-import { Resend } from 'resend';
 import { InviteEmail } from '@/emails/agency-invite'; // Ajustez le chemin
+import { createClient } from "@/lib/supabase/server"
+import { inviteAgencyMemberSchema, InviteAgencyMemberState, UpdateAgencyState } from "@/lib/validators/agency"
+import crypto from "crypto"
+import { revalidatePath } from "next/cache"
+import { Resend } from 'resend'
+import { z } from "zod"
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 // Validation schema for agency information
