@@ -42,8 +42,8 @@ const mainNav = [
 ]
 
 const secondaryNav = [
-    { label: "Clients", href: "/app/clients", icon: Building2 },
-    { label: "Équipe", href: "/app/team", icon: Users },
+    { label: "Clients", href: "/app/companies", icon: Building2 },
+    { label: "Agence", href: "/app/agency", icon: Users },
 ]
 
 interface AppSidebarProps {
