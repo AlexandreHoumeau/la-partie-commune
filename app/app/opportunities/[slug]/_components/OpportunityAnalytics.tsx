@@ -1,24 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getTrackingLinkAnalytics } from "@/actions/tracking.server";
-import {
-    Smartphone,
-    Monitor,
-    Tablet,
-    Activity,
-    Globe,
-    MousePointer2,
-    Clock,
-    Users,
-    ChevronRight,
-    Zap,
-    MapPin
-} from "lucide-react";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Activity,
+    Clock,
+    MapPin,
+    Monitor,
+    MousePointer2,
+    Smartphone,
+    Tablet,
+    Users,
+    Zap
+} from "lucide-react";
+import { useEffect, useState } from "react";
 
 export function OpportunityAnalytics({ opportunityId }: { opportunityId: string }) {
     const [data, setData] = useState<any>(null);

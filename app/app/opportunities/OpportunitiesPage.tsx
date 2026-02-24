@@ -38,7 +38,10 @@ export default function OpportunitiesPage() {
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: OpportunityStatus }) => updateOpportunityStatus(id, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["opportunities"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+      queryClient.invalidateQueries({ queryKey: ["opportunities-status-counts"] });
+    },
   });
 
   useLoadingBar(isLoading);
@@ -51,7 +54,10 @@ export default function OpportunitiesPage() {
       }
     },
     onDeleteOpportunities: (ids) =>
-      deleteOpportunities(ids).then(() => queryClient.invalidateQueries({ queryKey: ["opportunities"] })),
+      deleteOpportunities(ids).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+        queryClient.invalidateQueries({ queryKey: ["opportunities-status-counts"] });
+      }),
     editOpportunity: (opp) => { setEditing(opp); setDialogOpen(true); },
     onFavoriteChange: (id, isFavorite) =>
       updateOpportunityFavorite(id, isFavorite).then(() => queryClient.invalidateQueries({ queryKey: ["opportunities"] })),
@@ -127,7 +133,11 @@ export default function OpportunitiesPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         initialData={editing}
-        onSaved={() => { queryClient.invalidateQueries({ queryKey: ["opportunities"] }); setDialogOpen(false); }}
+        onSaved={() => {
+        queryClient.invalidateQueries({ queryKey: ["opportunities"] });
+        queryClient.invalidateQueries({ queryKey: ["opportunities-status-counts"] });
+        setDialogOpen(false);
+      }}
       />
       <ConvertProjectDialog
         opportunity={convertingOpp}

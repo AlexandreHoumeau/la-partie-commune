@@ -172,7 +172,7 @@ export const getColumns = ({
                                     <span className="text-sm font-medium">Modifier</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={async () => {
-                                    const formattedString = `Nom: ${opportunity.company?.name}\nEmail: ${opportunity.company?.email}\nSecteur: ${opportunity.company?.business_sector}`;
+                                    const formattedString = `Nom: ${opportunity.company?.name}\nEmail: ${opportunity.company?.email}\nSecteur: ${opportunity.company?.business_sector} \nDétails: ${opportunity.description} \nStatut  de l'opportunité: ${opportunity.status}\nA contacter via: ${opportunity.contact_via}`;
                                     await navigator.clipboard.writeText(formattedString);
                                     toast.success("Infos copiées");
                                 }} className="rounded-lg cursor-pointer">
