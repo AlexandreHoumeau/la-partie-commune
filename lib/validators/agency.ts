@@ -162,4 +162,7 @@ export type Agency = {
     phone: string | null;
     address: string | null;
     email: string | null;
+    primary_color: string | null;
+    secondary_color: string | null;
+    logo_url: string | null;
 }
