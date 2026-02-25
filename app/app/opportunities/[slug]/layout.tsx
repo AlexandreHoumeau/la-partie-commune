@@ -28,9 +28,6 @@ export default async function OpportunityLayout({
           </div>
 
           <aside className="hidden lg:flex flex-col h-full overflow-y-auto border-l bg-white/50 backdrop-blur-md p-6 shadow-sm">
-            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-6">
-              Informations Clés
-            </h3>
             <OpportunitySidebarInfo {...opportunity} />
           </aside>
         </main>

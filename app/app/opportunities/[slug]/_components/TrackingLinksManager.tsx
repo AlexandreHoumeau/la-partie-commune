@@ -3,19 +3,19 @@
 import { createTrackingLink, getTrackingLinks, toggleTrackingLink } from "@/actions/tracking.server";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch"; // Assure-toi d'avoir le composant Switch de shadcn
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import { useAgency } from "@/providers/agency-provider";
 import {
+    Activity,
     Check,
+    CheckCircle2,
     Copy,
     Link2,
     Loader2,
     Plus,
     ShieldAlert,
-    ShieldCheck,
     X
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -42,7 +42,6 @@ export function TrackingLinksManager({ opportunityId, agencyId }: { opportunityI
 
     const handleToggleStatus = async (linkId: string, currentStatus: boolean) => {
         setTogglingId(linkId);
-        // On inverse le statut
         const result = await toggleTrackingLink(linkId, !currentStatus);
 
         if (result.success) {
@@ -65,7 +64,7 @@ export function TrackingLinksManager({ opportunityId, agencyId }: { opportunityI
         });
 
         if (result.success) {
-            toast.success("Lien généré");
+            toast.success("Lien généré avec succès");
             setCampaignName("");
             setShowInput(false);
             await loadLinks();
@@ -76,29 +75,35 @@ export function TrackingLinksManager({ opportunityId, agencyId }: { opportunityI
     const copyToClipboard = (text: string, id: string) => {
         navigator.clipboard.writeText(text);
         setCopiedId(id);
-        toast.success("Lien copié");
+        toast.success("Lien copié dans le presse-papier");
         setTimeout(() => setCopiedId(null), 2000);
     };
 
     if (!agency?.website) {
         return (
-            /* ... Garder le code du state "website manquant" du message précédent ... */
-            <div className="p-10 text-center border-2 border-dashed rounded-2xl">Configuration requise</div>
+            <div className="flex flex-col items-center justify-center p-10 text-center rounded-2xl border border-dashed border-slate-200/80 bg-slate-50/50">
+                <ShieldAlert className="h-8 w-8 text-slate-300 mb-3" />
+                <p className="text-sm font-medium text-slate-900">Configuration requise</p>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm">
+                    Veuillez configurer le site web de votre agence dans les paramètres avant de pouvoir générer des liens de tracking.
+                </p>
+            </div>
         );
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-6 animate-in fade-in duration-500">
             {/* --- HEADER --- */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Gestion des liens</h3>
-                    <p className="text-xs text-slate-500 font-medium">Contrôlez la disponibilité de vos URLs</p>
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100/80">
+                <div className="space-y-1">
+                    <h3 className="text-base font-semibold text-slate-900 tracking-tight">Liens de tracking</h3>
+                    <p className="text-sm text-slate-500 font-medium">Gérez et suivez les clics de vos campagnes</p>
                 </div>
                 {!showInput && (
                     <Button
                         onClick={() => setShowInput(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white rounded-full h-9 px-4 text-xs font-bold transition-all"
+                        size="sm"
+                        className="bg-slate-900 hover:bg-slate-800 text-white shadow-md shadow-slate-900/10 transition-all duration-300 rounded-xl"
                     >
                         <Plus className="h-4 w-4 mr-1.5" /> Créer un lien
                     </Button>
@@ -107,33 +112,44 @@ export function TrackingLinksManager({ opportunityId, agencyId }: { opportunityI
 
             {/* --- ZONE DE CRÉATION --- */}
             {showInput && (
-                <Card className="border-blue-100 bg-blue-50/20 shadow-none animate-in slide-in-from-top-2 duration-300 rounded-2xl">
-                    <CardContent className="p-4 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-blue-600">Configuration du lien</span>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => setShowInput(false)}>
-                                <X className="h-4 w-4 text-slate-400" />
-                            </Button>
-                        </div>
-                        <div className="flex gap-2">
-                            <Input
-                                placeholder="Nom de la campagne (ex: Relance J+3)"
-                                value={campaignName}
-                                onChange={(e) => setCampaignName(e.target.value)}
-                                className="bg-white border-slate-200 rounded-xl"
-                                onKeyDown={(e) => e.key === 'Enter' && handleCreateLink()}
-                            />
-                            <Button onClick={handleCreateLink} disabled={isCreating} className="bg-slate-900 rounded-xl px-6">
-                                {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Générer"}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="p-5 rounded-2xl border border-slate-200/80 bg-slate-50/50 shadow-sm animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                        <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+                            Nouveau lien de tracking
+                        </span>
+                        <button 
+                            onClick={() => setShowInput(false)}
+                            className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/50 transition-colors"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                        <Input
+                            autoFocus
+                            placeholder="Ex: Relance J+3, Campagne Emailing Mars..."
+                            value={campaignName}
+                            onChange={(e) => setCampaignName(e.target.value)}
+                            className="flex-1 h-10 border-slate-200 focus:border-slate-900 focus:ring-slate-900 shadow-sm bg-white"
+                            onKeyDown={(e) => e.key === 'Enter' && handleCreateLink()}
+                            disabled={isCreating}
+                        />
+                        <Button 
+                            onClick={handleCreateLink} 
+                            disabled={isCreating} 
+                            className="h-10 bg-slate-900 hover:bg-slate-800 text-white rounded-xl px-6 shadow-md"
+                        >
+                            {isCreating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Link2 className="h-4 w-4 mr-2" />}
+                            Générer le lien
+                        </Button>
+                    </div>
+                </div>
             )}
 
             {/* --- LISTE DES LIENS --- */}
-            <div className="space-y-4">
+            <div className="space-y-3">
                 {links.map((link) => {
+                    // On simule l'URL finale
                     const url = `${window.location.origin}/t/${link.short_code}`;
                     const isActive = link.is_active;
 
@@ -141,90 +157,116 @@ export function TrackingLinksManager({ opportunityId, agencyId }: { opportunityI
                         <div
                             key={link.id}
                             className={cn(
-                                "group relative bg-white border p-5 rounded-2xl transition-all duration-300",
-                                isActive ? "border-slate-100 shadow-sm" : "border-slate-50 opacity-60 bg-slate-50/30 shadow-none"
+                                "group relative overflow-hidden rounded-2xl border transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-5 p-5",
+                                isActive 
+                                    ? "border-slate-200/60 bg-white shadow-sm hover:shadow-md" 
+                                    : "border-slate-200/40 bg-slate-50/50 opacity-80 hover:opacity-100"
                             )}
                         >
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                <div className="space-y-3 flex-1">
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn(
-                                            "p-2 rounded-lg transition-colors",
-                                            isActive ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-400"
-                                        )}>
-                                            <Link2 className="h-4 w-4" />
+                            {/* Left part: Info & URL */}
+                            <div className="flex items-start gap-4 flex-1 min-w-0">
+                                <div className={cn(
+                                    "mt-0.5 p-2 rounded-xl border shrink-0 transition-colors",
+                                    isActive 
+                                        ? "bg-slate-50 border-slate-200 text-slate-700" 
+                                        : "bg-slate-100/50 border-slate-200/50 text-slate-400"
+                                )}>
+                                    <Link2 className="h-4 w-4" />
+                                </div>
+                                
+                                <div className="space-y-3 flex-1 min-w-0">
+                                    <div>
+                                        <div className="flex items-center gap-2.5 mb-1">
+                                            <h4 className={cn("font-medium text-sm truncate tracking-tight", isActive ? "text-slate-900" : "text-slate-600")}>
+                                                {link.campaign_name}
+                                            </h4>
+                                            {isActive ? (
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-200/50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">
+                                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                                                    Actif
+                                                </span>
+                                            ) : (
+                                                <span className="inline-flex items-center rounded-full bg-slate-100 border border-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                                                    Désactivé
+                                                </span>
+                                            )}
                                         </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <h4 className="font-bold text-slate-900 text-sm">
-                                                    {link.campaign_name}
-                                                </h4>
-                                                {isActive ? (
-                                                    <Badge className="bg-emerald-50 text-emerald-600 border-none text-[9px] h-4">Actif</Badge>
-                                                ) : (
-                                                    <Badge className="bg-slate-100 text-slate-500 border-none text-[9px] h-4">Inactif</Badge>
-                                                )}
-                                            </div>
-                                            <p className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">
-                                                {link.short_code}
-                                            </p>
+                                        <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
+                                            <span>ID: {link.short_code}</span>
+                                            <span>•</span>
+                                            {/* Assuming you have a created_at, otherwise just remove this span */}
+                                            <span>Tracking Link</span> 
                                         </div>
                                     </div>
 
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex-1 bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 text-[11px] font-mono text-slate-500 truncate">
+                                    <div className="flex items-center gap-2 max-w-lg">
+                                        <div className="flex-1 bg-slate-50 border border-slate-100 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-600 truncate transition-colors group-hover:bg-slate-100/50">
                                             {url}
                                         </div>
                                         <Button
-                                            variant="outline" size="icon"
+                                            variant="ghost" 
+                                            size="sm"
                                             disabled={!isActive}
                                             className={cn(
-                                                "h-9 w-9 rounded-xl transition-all",
-                                                copiedId === link.id && "bg-emerald-50 border-emerald-200 text-emerald-600"
+                                                "h-8 w-8 p-0 rounded-lg border border-transparent transition-all shrink-0",
+                                                copiedId === link.id 
+                                                    ? "bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-600" 
+                                                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-100 hover:border-slate-200"
                                             )}
                                             onClick={() => copyToClipboard(url, link.id)}
                                         >
-                                            {copiedId === link.id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                            {copiedId === link.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                                         </Button>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* --- CONTRÔLES --- */}
-                                <div className="flex items-center gap-4 pr-2">
-                                    <div className="text-right flex flex-col items-end gap-1">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                            Statut du lien
-                                        </span>
-                                        <div className="flex items-center gap-3">
-                                            {togglingId === link.id ? (
-                                                <Loader2 className="h-4 w-4 animate-spin text-slate-300" />
-                                            ) : isActive ? (
-                                                <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                                            ) : (
-                                                <ShieldAlert className="h-4 w-4 text-slate-300" />
-                                            )}
-                                            <Switch
-                                                checked={isActive}
-                                                onCheckedChange={() => handleToggleStatus(link.id, isActive)}
-                                                disabled={togglingId === link.id}
-                                                className="data-[state=checked]:bg-blue-600"
-                                            />
-                                        </div>
-                                    </div>
+                            {/* Right part: Controls */}
+                            <div className="flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-2 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6 shrink-0">
+                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                                    Accès
+                                </span>
+                                <div className="flex items-center gap-3">
+                                    {togglingId === link.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin text-slate-300" />
+                                    ) : isActive ? (
+                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                    ) : (
+                                        <ShieldAlert className="h-4 w-4 text-slate-300" />
+                                    )}
+                                    <Switch
+                                        checked={isActive}
+                                        onCheckedChange={() => handleToggleStatus(link.id, isActive)}
+                                        disabled={togglingId === link.id}
+                                        className="data-[state=checked]:bg-slate-900"
+                                    />
                                 </div>
                             </div>
                         </div>
                     );
                 })}
+                
+                {!isLoading && links.length === 0 && !showInput && (
+                    <div className="flex flex-col items-center justify-center p-10 text-center rounded-2xl border border-dashed border-slate-200/80 bg-slate-50/50">
+                        <Activity className="h-8 w-8 text-slate-300 mb-3" />
+                        <p className="text-sm font-medium text-slate-900">Aucun lien actif</p>
+                        <p className="text-xs text-slate-500 mt-1">Créez votre premier lien de tracking pour analyser l'engagement.</p>
+                    </div>
+                )}
             </div>
 
             {/* --- INFO BOX --- */}
-            {!links.some(l => l.is_active) && links.length > 0 && (
-                <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-bottom-2">
-                    <ShieldAlert className="h-5 w-5 text-amber-600" />
-                    <p className="text-xs text-amber-700 font-medium">
-                        Attention : Tous vos liens sont actuellement inactifs. Vos prospects seront redirigés vers une page d'erreur.
-                    </p>
+            {!isLoading && links.length > 0 && !links.some(l => l.is_active) && (
+                <div className="bg-amber-50/50 border border-amber-200/60 p-4 rounded-2xl flex items-start gap-3 animate-in slide-in-from-bottom-2 mt-6">
+                    <ShieldAlert className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm font-semibold text-amber-800 tracking-tight">
+                            Tous les liens sont désactivés
+                        </p>
+                        <p className="text-xs text-amber-700/80 font-medium mt-0.5 leading-relaxed">
+                            Vos prospects cliquant sur ces URLs seront redirigés vers une page d'erreur. Réactivez-les pour rétablir la redirection.
+                        </p>
+                    </div>
                 </div>
             )}
         </div>

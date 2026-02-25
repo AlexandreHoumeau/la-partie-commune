@@ -6,14 +6,6 @@ import { Building2 } from "lucide-react";
 export default function OpportunitySidebarInfo(opportunity: OpportunityWithCompany) {
     return (
         <div className="space-y-6">
-            <div>
-                <div className="flex items-center gap-2 mb-4">
-                    <Building2 className="h-5 w-5 text-muted-foreground" />
-                    <h2 className="text-lg font-semibold">Informations</h2>
-                </div>
-                <Separator />
-            </div>
-
             <OpportunityMetadata {...opportunity} />
 
             {opportunity.description && (
