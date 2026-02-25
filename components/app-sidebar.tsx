@@ -6,7 +6,6 @@ import {
     Briefcase,
     Building2,
     ChevronsUpDown,
-    Command,
     Kanban,
     LayoutDashboard,
     LogOut,
@@ -56,13 +55,16 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
     const { agency, first_name, last_name, email, role } = useAgency()
     const [mounted, setMounted] = useState(false)
 
-    // Évite les erreurs d'hydratation avec Framer Motion
     useEffect(() => {
         setMounted(true)
     }, [])
 
     const fullName = `${first_name} ${last_name}`
     const initials = `${first_name?.charAt(0) || ""}${last_name?.charAt(0) || ""}`
+
+    // Brand colors with fallbacks
+    const primaryColor = agency?.primary_color || "#2563EB"
+    const secondaryColor = agency?.secondary_color || "#6366F1"
 
     const isLinkActive = (href: string) => {
         if (href === "/app") return pathname === "/app"
@@ -82,7 +84,7 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                 {/* --- TOGGLE BUTTON --- */}
                 <button
                     onClick={() => setIsCollapsed(!isCollapsed)}
-                    className="absolute -right-3 top-6 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-slate-900 hover:bg-slate-50 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                    className="absolute -right-3 top-6 z-40 flex h-6 w-6 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:text-slate-900 hover:bg-slate-50 transition-all focus:outline-none"
                 >
                     {isCollapsed ? <PanelLeftOpen className="h-3 w-3" /> : <PanelLeftClose className="h-3 w-3" />}
                 </button>
@@ -95,8 +97,25 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                                 "w-full justify-start transition-colors hover:bg-slate-50",
                                 isCollapsed ? "px-0 justify-center h-10 w-10 mx-auto" : "gap-3 px-2"
                             )}>
-                                <div className="flex shrink-0 aspect-square size-8 items-center justify-center rounded-xl bg-blue-600 text-white shadow-blue-200 shadow-lg">
-                                    <Command className="size-4" />
+                                {/* Agency logo / initial badge */}
+                                <div
+                                    className="flex shrink-0 aspect-square size-8 items-center justify-center rounded-xl text-white overflow-hidden"
+                                    style={{
+                                        backgroundColor: primaryColor,
+                                        boxShadow: `0 4px 14px ${primaryColor}55`,
+                                    }}
+                                >
+                                    {agency?.logo_url ? (
+                                        <img
+                                            src={agency.logo_url}
+                                            alt={agency.name}
+                                            className="w-full h-full object-contain p-0.5"
+                                        />
+                                    ) : (
+                                        <span className="text-xs font-bold">
+                                            {agency?.name?.charAt(0)?.toUpperCase() || "A"}
+                                        </span>
+                                    )}
                                 </div>
 
                                 <AnimatePresence mode="wait">
@@ -108,7 +127,10 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                                             className="grid flex-1 text-left text-sm leading-tight overflow-hidden"
                                         >
                                             <span className="truncate font-bold text-slate-900">{agency?.name || "Mon Agence"}</span>
-                                            <span className="truncate text-[10px] text-blue-600 font-bold uppercase tracking-wider">
+                                            <span
+                                                className="truncate text-[10px] font-bold uppercase tracking-wider"
+                                                style={{ color: secondaryColor }}
+                                            >
                                                 {role?.replace("agency_", "")}
                                             </span>
                                         </motion.div>
@@ -120,9 +142,18 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-64 ml-2 mt-1 shadow-xl border-slate-100 rounded-xl" align="start">
                             <DropdownMenuLabel className="text-[10px] uppercase text-slate-400 tracking-widest p-3">Agences liées</DropdownMenuLabel>
-                            <DropdownMenuItem className="gap-3 p-3 cursor-pointer focus:bg-blue-50 rounded-lg">
-                                <div className="flex size-8 items-center justify-center rounded-lg border border-slate-200 bg-white">
-                                    <Building2 className="size-4 text-slate-600" />
+                            <DropdownMenuItem className="gap-3 p-3 cursor-pointer rounded-lg" style={{ ["--tw-bg-opacity" as any]: 1 }}>
+                                <div
+                                    className="flex size-8 items-center justify-center rounded-lg overflow-hidden shrink-0"
+                                    style={{ backgroundColor: primaryColor }}
+                                >
+                                    {agency?.logo_url ? (
+                                        <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-contain p-0.5" />
+                                    ) : (
+                                        <span className="text-xs font-bold text-white">
+                                            {agency?.name?.charAt(0)?.toUpperCase() || "A"}
+                                        </span>
+                                    )}
                                 </div>
                                 <span className="font-medium text-slate-700">{agency?.name}</span>
                             </DropdownMenuItem>
@@ -138,10 +169,16 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                             {!isCollapsed ? (
                                 <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">Plateforme</p>
                             ) : (
-                                <div className="h-4" /> // Spacer quand collapsed
+                                <div className="h-4" />
                             )}
                             {mainNav.map((item) => (
-                                <NavItem key={item.href} item={item} active={isLinkActive(item.href)} isCollapsed={isCollapsed} />
+                                <NavItem
+                                    key={item.href}
+                                    item={item}
+                                    active={isLinkActive(item.href)}
+                                    isCollapsed={isCollapsed}
+                                    primaryColor={primaryColor}
+                                />
                             ))}
                         </div>
 
@@ -150,10 +187,16 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                             {!isCollapsed ? (
                                 <p className="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3">Management</p>
                             ) : (
-                                <div className="w-8 mx-auto h-px bg-slate-100 my-4" /> // Séparateur quand collapsed
+                                <div className="w-8 mx-auto h-px bg-slate-100 my-4" />
                             )}
                             {secondaryNav.map((item) => (
-                                <NavItem key={item.href} item={item} active={isLinkActive(item.href)} isCollapsed={isCollapsed} />
+                                <NavItem
+                                    key={item.href}
+                                    item={item}
+                                    active={isLinkActive(item.href)}
+                                    isCollapsed={isCollapsed}
+                                    primaryColor={primaryColor}
+                                />
                             ))}
                         </div>
                     </nav>
@@ -169,7 +212,10 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                             )}>
                                 <div className="relative shrink-0">
                                     <Avatar className="h-9 w-9 rounded-xl border-2 border-white shadow-sm transition-transform group-hover:scale-105">
-                                        <AvatarFallback className="rounded-xl bg-blue-600 text-white text-xs font-bold">
+                                        <AvatarFallback
+                                            className="rounded-xl text-white text-xs font-bold"
+                                            style={{ backgroundColor: primaryColor }}
+                                        >
                                             {initials}
                                         </AvatarFallback>
                                     </Avatar>
@@ -184,7 +230,12 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                                             exit={{ opacity: 0, width: 0 }}
                                             className="grid flex-1 text-left text-sm leading-tight overflow-hidden"
                                         >
-                                            <span className="truncate font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{fullName}</span>
+                                            <span
+                                                className="truncate font-bold text-slate-900 transition-colors"
+                                                style={{ ["--hover-color" as any]: primaryColor }}
+                                            >
+                                                {fullName}
+                                            </span>
                                             <span className="truncate text-[10px] text-slate-500">{email}</span>
                                         </motion.div>
                                     )}
@@ -201,13 +252,13 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
                             </div>
 
                             <DropdownMenuGroup className="space-y-1">
-                                <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5 focus:bg-blue-50 focus:text-blue-700">
+                                <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
                                     <Link href="/app/settings/profile">
                                         <Settings className="mr-3 h-4 w-4" />
                                         <span className="font-medium">Mon Profil</span>
                                     </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5 focus:bg-blue-50 focus:text-blue-700">
+                                <DropdownMenuItem asChild className="rounded-lg cursor-pointer py-2.5">
                                     <Link href="/app/settings/billing">
                                         <ShieldCheck className="mr-3 h-4 w-4" />
                                         <span className="font-medium">Abonnement</span>
@@ -229,29 +280,43 @@ export function AppSidebar({ isCollapsed, setIsCollapsed }: AppSidebarProps) {
     )
 }
 
-function NavItem({ item, active, isCollapsed }: { item: any, active: boolean, isCollapsed: boolean }) {
+function NavItem({
+    item,
+    active,
+    isCollapsed,
+    primaryColor,
+}: {
+    item: any
+    active: boolean
+    isCollapsed: boolean
+    primaryColor: string
+}) {
     const navContent = (
         <Button
             variant="ghost"
             className={cn(
                 "w-full transition-all duration-200 group relative overflow-hidden h-10",
                 isCollapsed ? "justify-center px-0 w-10 mx-auto" : "justify-start gap-3 px-3",
-                active ? "text-blue-600 bg-blue-50/80" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                active ? "bg-slate-50" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
             )}
+            style={active ? { color: primaryColor } : undefined}
         >
-            {/* Pilule active verticale */}
+            {/* Active indicator pill */}
             {active && (
                 <motion.div
                     layoutId="sidebarActive"
-                    className="absolute left-0 w-1 h-5 bg-blue-600 rounded-r-full"
+                    className="absolute left-0 w-1 h-5 rounded-r-full"
+                    style={{ backgroundColor: primaryColor }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
             )}
 
             <item.icon className={cn(
                 "h-[18px] w-[18px] shrink-0 transition-colors",
-                active ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
-            )} />
+                !active && "text-slate-400 group-hover:text-slate-600"
+            )}
+                style={active ? { color: primaryColor } : undefined}
+            />
 
             <AnimatePresence mode="wait">
                 {!isCollapsed && (

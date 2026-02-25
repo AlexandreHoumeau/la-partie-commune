@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { AppSidebar } from "@/components/app-sidebar"
+import { NavigationProgress } from "@/components/navigation-progress"
 import { cn } from "@/lib/utils";
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
@@ -9,6 +10,7 @@ export function AppLayoutClient({ children }: { children: React.ReactNode }) {
 
     return (
         <div className="h-screen bg-slate-50 flex overflow-hidden">
+            <NavigationProgress />
             <AppSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
 
             <main className={cn(

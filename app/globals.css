@@ -126,13 +126,13 @@
 }
 
 
-/* NProgress Loading Bar */
+/* NProgress Loading Bar — uses brand secondary color */
 #nprogress {
   pointer-events: none;
 }
 
 #nprogress .bar {
-  background: black;
+  background: var(--brand-secondary, #6366F1);
   position: fixed;
   z-index: 9999;
   top: 0;
@@ -147,7 +147,7 @@
   right: 0px;
   width: 100px;
   height: 100%;
-  box-shadow: 0 0 10px black, 0 0 5px black;
+  box-shadow: 0 0 10px var(--brand-secondary, #6366F1), 0 0 5px var(--brand-secondary, #6366F1);
   opacity: 1;
   transform: rotate(3deg) translate(0px, -4px);
 }

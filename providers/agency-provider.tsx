@@ -1,17 +1,30 @@
 "use client"
 
-import { createContext, useContext } from "react"
+import { createContext, useContext, useEffect } from "react"
 import { AuthUserContext } from "@/lib/validators/definitions"
 
 const AgencyContext = createContext<AuthUserContext | null>(null)
 
-export function AgencyProvider({ 
-    children, 
-    initialData 
-}: { 
-    children: React.ReactNode, 
-    initialData: AuthUserContext 
+export function AgencyProvider({
+    children,
+    initialData
+}: {
+    children: React.ReactNode,
+    initialData: AuthUserContext
 }) {
+    const primaryColor = initialData?.agency?.primary_color
+    const secondaryColor = initialData?.agency?.secondary_color
+
+    useEffect(() => {
+        const root = document.documentElement
+        if (primaryColor) {
+            root.style.setProperty('--brand-primary', primaryColor)
+        }
+        if (secondaryColor) {
+            root.style.setProperty('--brand-secondary', secondaryColor)
+        }
+    }, [primaryColor, secondaryColor])
+
     return (
         <AgencyContext.Provider value={initialData}>
             {children}

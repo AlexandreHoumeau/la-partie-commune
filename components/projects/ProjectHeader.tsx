@@ -31,7 +31,10 @@ export function ProjectHeader({ project }: { project: any }) {
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     {/* Project Title & Company */}
                     <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xl border border-blue-100/50 shadow-sm shrink-0">
+                        <div
+                            className="h-12 w-12 rounded-2xl flex items-center justify-center font-bold text-xl shadow-sm shrink-0 text-white"
+                            style={{ backgroundColor: 'var(--brand-secondary, #6366F1)' }}
+                        >
                             {companyInitial}
                         </div>
                         <div>
@@ -84,7 +87,10 @@ export function ProjectHeader({ project }: { project: any }) {
                                     }`}
                             >
                                 <div className="flex items-center gap-2 relative z-10">
-                                    <tab.icon className={`w-4 h-4 ${isActive ? "text-blue-600" : ""}`} />
+                                    <tab.icon
+                                        className="w-4 h-4"
+                                        style={isActive ? { color: 'var(--brand-secondary, #6366F1)' } : undefined}
+                                    />
                                     {tab.name}
                                 </div>
 
@@ -92,7 +98,8 @@ export function ProjectHeader({ project }: { project: any }) {
                                 {isActive && (
                                     <motion.div
                                         layoutId="activeProjectTab"
-                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full"
+                                        className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full"
+                                        style={{ backgroundColor: 'var(--brand-secondary, #6366F1)' }}
                                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                     />
                                 )}

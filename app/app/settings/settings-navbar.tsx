@@ -29,12 +29,10 @@ export default function SettingsNavbar() {
                             href={section.href}
                             className={cn(
                                 "group relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap",
-                                isActive
-                                    ? "text-blue-600"
-                                    : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
+                                isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-900 hover:bg-white/50"
                             )}
+                            style={isActive ? { color: 'var(--brand-secondary, #6366F1)' } : undefined}
                         >
-                            {/* Fond blanc actif (Pilule) */}
                             {isActive && (
                                 <motion.div
                                     layoutId="activeTab"
@@ -43,16 +41,18 @@ export default function SettingsNavbar() {
                                 />
                             )}
 
-                            <Icon className={cn(
-                                "h-4 w-4 shrink-0 z-10 transition-colors",
-                                isActive ? "text-blue-600" : "text-slate-400 group-hover:text-slate-600"
-                            )} />
+                            <Icon
+                                className={cn("h-4 w-4 shrink-0 z-10 transition-colors", !isActive && "text-slate-400 group-hover:text-slate-600")}
+                                style={isActive ? { color: 'var(--brand-secondary, #6366F1)' } : undefined}
+                            />
 
                             <span className="relative z-10">{section.label}</span>
 
-                            {/* Petit badge optionnel pour l'IA ou Billing */}
                             {section.id === 'ai' && (
-                                <span className="relative z-10 flex h-2 w-2 rounded-full bg-blue-500 animate-pulse hidden md:block" />
+                                <span
+                                    className="relative z-10 flex h-2 w-2 rounded-full animate-pulse hidden md:block"
+                                    style={{ backgroundColor: 'var(--brand-secondary, #6366F1)' }}
+                                />
                             )}
                         </Link>
                     )

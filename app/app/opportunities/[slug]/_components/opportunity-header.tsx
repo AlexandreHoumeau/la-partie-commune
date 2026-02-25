@@ -23,11 +23,11 @@ const STATUS_STYLES: Record<OpportunityStatus, { bg: string; text: string; dot: 
 
 export type OpportunityTabId = "message" | "tracking" | "analytics" | "timeline";
 
-const TABS: { id: OpportunityTabId; label: string; icon: React.ElementType; color: string }[] = [
-  { id: "message", label: "Message IA", icon: Mail, color: "text-blue-600" },
-  { id: "tracking", label: "Liens & Tracking", icon: Link2, color: "text-indigo-600" },
-  { id: "analytics", label: "Analytics", icon: BarChart3, color: "text-emerald-600" },
-  { id: "timeline", label: "Timeline", icon: Calendar, color: "text-slate-600" },
+const TABS: { id: OpportunityTabId; label: string; icon: React.ElementType }[] = [
+  { id: "message", label: "Message IA", icon: Mail },
+  { id: "tracking", label: "Liens & Tracking", icon: Link2 },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "timeline", label: "Timeline", icon: Calendar },
 ];
 
 export default function OpportunityHeader({ opportunity }: { opportunity: OpportunityWithCompany }) {
@@ -60,7 +60,10 @@ export default function OpportunityHeader({ opportunity }: { opportunity: Opport
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           {/* Opportunity Title & Company */}
           <div className="flex items-center gap-4">
-            <div className="h-12 w-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xl border border-blue-100/50 shadow-sm shrink-0">
+            <div
+              className="h-12 w-12 rounded-2xl flex items-center justify-center font-bold text-xl shadow-sm shrink-0 text-white"
+              style={{ backgroundColor: 'var(--brand-secondary, #6366F1)' }}
+            >
               {companyInitial}
             </div>
             <div>
@@ -112,15 +115,19 @@ export default function OpportunityHeader({ opportunity }: { opportunity: Opport
                   isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
                 )}
               >
-                <Icon className={cn("w-4 h-4", isActive ? tab.color : "")} />
+                <Icon
+                  className="w-4 h-4"
+                  style={isActive ? { color: 'var(--brand-secondary, #6366F1)' } : undefined}
+                />
                 {tab.label}
                 {tab.id === "message" && isActive && (
-                  <Sparkles className="h-3 w-3 text-blue-500" />
+                  <Sparkles className="h-3 w-3" style={{ color: 'var(--brand-secondary, #6366F1)' }} />
                 )}
                 {isActive && (
                   <motion.div
                     layoutId="activeOppTab"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-t-full"
+                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-full"
+                    style={{ backgroundColor: 'var(--brand-secondary, #6366F1)' }}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   />
                 )}

@@ -8,12 +8,12 @@ export function CompanyCard({ company }: { company: CompanyWithRelations }) {
   const isClient = company.projects.length > 0;
 
   return (
-    <div className="bg-white border border-slate-200/75 rounded-3xl p-6 flex flex-col h-full transition-all duration-300 hover:border-indigo-300 hover:shadow-xl hover:shadow-indigo-500/5 hover:-translate-y-1">
+    <div className="bg-white border border-slate-200/75 rounded-3xl p-6 flex flex-col h-full transition-all duration-300 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1">
 
       {/* Top row: avatar + name + badge */}
       <div className="flex items-start justify-between gap-3 mb-5">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100/50 flex items-center justify-center text-indigo-600 font-extrabold text-lg shadow-sm shrink-0">
+          <div className="h-11 w-11 rounded-2xl flex items-center justify-center font-extrabold text-lg shadow-sm shrink-0 text-white" style={{ backgroundColor: 'var(--brand-secondary, #6366F1)' }}>
             {company.name.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
@@ -30,7 +30,7 @@ export function CompanyCard({ company }: { company: CompanyWithRelations }) {
             "shrink-0 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full",
             isClient
               ? "bg-emerald-50 text-emerald-700"
-              : "bg-blue-50 text-blue-700"
+              : "bg-slate-100 text-slate-600"
           )}
         >
           {isClient ? "Client" : "Prospect"}
@@ -42,9 +42,9 @@ export function CompanyCard({ company }: { company: CompanyWithRelations }) {
         {company.email && (
           <a
             href={`mailto:${company.email}`}
-            className="flex items-center gap-2 text-xs text-slate-500 hover:text-indigo-600 transition-colors group"
+            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-900 transition-colors group"
           >
-            <Mail className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-indigo-400" />
+            <Mail className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-slate-600" />
             <span className="truncate">{company.email}</span>
           </a>
         )}
@@ -59,9 +59,9 @@ export function CompanyCard({ company }: { company: CompanyWithRelations }) {
             href={company.website}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-2 text-xs text-slate-500 hover:text-indigo-600 transition-colors group"
+            className="flex items-center gap-2 text-xs text-slate-500 hover:text-slate-900 transition-colors group"
           >
-            <Globe className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-indigo-400" />
+            <Globe className="w-3.5 h-3.5 shrink-0 text-slate-400 group-hover:text-slate-600" />
             <span className="truncate">{company.website.replace(/^https?:\/\//, "")}</span>
           </a>
         )}
@@ -98,7 +98,7 @@ export function CompanyCard({ company }: { company: CompanyWithRelations }) {
                 {company.opportunities.slice(0, 2).map((o) => (
                   <span
                     key={o.id}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-100"
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200"
                   >
                     {o.name}
                   </span>
