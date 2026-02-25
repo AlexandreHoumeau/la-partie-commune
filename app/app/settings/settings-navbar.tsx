@@ -10,7 +10,6 @@ const sections = [
     { id: 'profile', label: 'Profil', icon: User, href: '/app/settings/profile' },
     { id: 'agency', label: 'Agence', icon: Building2, href: '/app/settings/agency' },
     { id: 'ai', label: 'Agent IA', icon: Sparkles, href: '/app/settings/ai' },
-    { id: 'tracking', label: 'Suivi', icon: BarChart3, href: '/app/settings/tracking' },
     { id: 'billing', label: 'Facturation', icon: CreditCard, href: '/app/settings/billing' }
 ]
 
