@@ -283,7 +283,7 @@ export async function removeTeamMember(memberId: string): Promise<{ success: boo
             .update({ agency_id: null, role: 'client' })
             .eq("id", memberId)
             .eq("agency_id", profile.agency_id)
-            
+
         if (updateError) {
             console.error("Error removing member:", updateError)
             return { success: false, message: "Erreur lors de la suppression du membre" }
@@ -295,5 +295,90 @@ export async function removeTeamMember(memberId: string): Promise<{ success: boo
     } catch (error) {
         console.error("Unexpected error:", error)
         return { success: false, message: "Une erreur inattendue s'est produite" }
+    }
+}
+
+// Add this new validator
+const updateBrandingSchema = z.object({
+    primaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Couleur invalide"),
+    secondaryColor: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Couleur invalide"),
+    // Note: The file itself is extracted directly from FormData before Zod validation 
+    // because Zod doesn't natively handle File objects well in Server Actions without extra config.
+});
+
+export async function updateAgencyBranding(
+    prevState: any,
+    formData: FormData
+) {
+    try {
+        const primaryColor = formData.get("primaryColor") as string;
+        const secondaryColor = formData.get("secondaryColor") as string;
+        const logoFile = formData.get("logo") as File | null;
+
+        const validatedFields = updateBrandingSchema.safeParse({ primaryColor, secondaryColor });
+
+        if (!validatedFields.success) {
+            return { success: false, message: "Données invalides" };
+        }
+
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) return { success: false, message: "Non authentifié" };
+
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("agency_id, role")
+            .eq("id", user.id)
+            .single();
+
+        if (!profile?.agency_id || profile.role !== 'agency_admin') {
+            return { success: false, message: "Permissions insuffisantes" };
+        }
+
+        let logo_url = undefined;
+
+        // Upload logo to Supabase Storage if a new file is provided
+        if (logoFile && logoFile.size > 0) {
+            const fileExt = logoFile.name.split('.').pop();
+            const fileName = `${profile.agency_id}-${Math.random()}.${fileExt}`;
+            const filePath = `logos/${fileName}`;
+
+            const { error: uploadError, data } = await supabase.storage
+                .from('agency-branding')
+                .upload(filePath, logoFile, { upsert: true });
+
+            if (uploadError) throw uploadError;
+
+            // Get the public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('agency-branding')
+                .getPublicUrl(filePath);
+
+            logo_url = publicUrl;
+        }
+
+        // Update the agency record
+        const updateData: any = {
+            primary_color: validatedFields.data.primaryColor,
+            secondary_color: validatedFields.data.secondaryColor,
+        };
+
+        if (logo_url) updateData.logo_url = logo_url;
+
+        const { error: updateError } = await supabase
+            .from("agencies")
+            .update(updateData)
+            .eq("id", profile.agency_id);
+
+        if (updateError) throw updateError;
+
+        revalidatePath("/app/agency");
+        revalidatePath("/app", "layout");
+        return { success: true, message: "Branding mis à jour avec succès" };
+
+    } catch (error) {
+        console.error("Branding update error:", error);
+        return { success: false, message: "Erreur lors de la mise à jour" };
     }
 }
