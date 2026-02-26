@@ -23,17 +23,10 @@ export type SettingsData = {
         utmCampaign: string
     } | null
     billing: {
-        plan: string
-        amount: number
-        nextPayment: string
-        paymentMethod: {
-            last4: string
-            expiry: string
-        }
-        invoices: Array<{
-            date: string
-            amount: number
-            status: string
-        }>
+        plan: 'FREE' | 'PRO'
+        subscription_status: string | null
+        stripe_customer_id: string | null
+        project_count: number
+        member_count: number
     } | null
 }
