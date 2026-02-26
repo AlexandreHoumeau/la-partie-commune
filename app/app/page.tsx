@@ -2,16 +2,18 @@ import { getAuthenticatedUserContext } from "@/actions/profile.server";
 import {
   getDashboardData,
   getDashboardRecentProjects,
+  getDashboardEngagement,
 } from "@/actions/dashboard.server";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { PipelineBreakdown } from "@/components/dashboard/PipelineBreakdown";
 import { ActiveProjectsList } from "@/components/dashboard/ActiveProjectsList";
 import { PriorityOpportunities } from "@/components/dashboard/PriorityOpportunities";
+import { RelanceSuggestions } from "@/components/dashboard/RelanceSuggestions";
 import Link from "next/link";
 import {
   Briefcase,
   FolderKanban,
-  Star,
+  MousePointerClick,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
@@ -22,9 +24,10 @@ export default async function DashboardPage() {
 
   const agencyId = userContext.agency.id;
 
-  const [data, recentProjects] = await Promise.all([
+  const [data, recentProjects, engagement] = await Promise.all([
     getDashboardData(agencyId),
     getDashboardRecentProjects(agencyId),
+    getDashboardEngagement(agencyId),
   ]);
 
   const {
@@ -39,6 +42,8 @@ export default async function DashboardPage() {
     pipelineTotal,
     favoriteOpps,
   } = data;
+
+  const { totalClicks7d, uniqueProspects7d, relances } = engagement;
 
   return (
     <div className="max-w-[1400px] mx-auto p-6 md:p-8 space-y-8 animate-in fade-in duration-500">
@@ -104,15 +109,18 @@ export default async function DashboardPage() {
           href="/app/projects"
         />
         <KpiCard
-          title="Opportunités prioritaires"
-          value={favoriteOpps.length}
-          subtitle="Marquées comme favorites"
-          icon={Star}
+          title="Prospects engagés (7j)"
+          value={uniqueProspects7d}
+          subtitle={`${totalClicks7d} clic${totalClicks7d !== 1 ? "s" : ""} sur vos liens`}
+          icon={MousePointerClick}
           iconBg="bg-amber-50"
           iconColor="text-amber-500"
           href="/app/opportunities"
         />
       </div>
+
+      {/* Relances suggérées */}
+      <RelanceSuggestions relances={relances} />
 
       {/* Pipeline + Projects */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

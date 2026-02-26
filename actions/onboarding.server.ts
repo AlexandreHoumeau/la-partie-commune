@@ -39,10 +39,11 @@ export async function completeOnboarding({
 
     const slug = generateSlug(agencyName.trim());
 
-    // Step 1: Create agency (owner_id nullable — will be set after profile creation)
+    // Step 1: Create profile first (required if owner_id FK references profiles.id)
+    // Actually, owner_id references auth.users which already exists, so insert agency with owner_id directly.
     const { data: agency, error: agencyError } = await supabaseAdmin
         .from("agencies")
-        .insert({ name: agencyName.trim(), slug })
+        .insert({ name: agencyName.trim(), slug, owner_id: user.id })
         .select()
         .single();
 
@@ -68,17 +69,6 @@ export async function completeOnboarding({
         await supabaseAdmin.from("agencies").delete().eq("id", agency.id);
         console.error("[onboarding] profile insert error:", JSON.stringify(profileError));
         throw new Error("Impossible de créer le profil");
-    }
-
-    // Step 3: Set owner_id on agency now that profile exists
-    const { error: updateError } = await supabaseAdmin
-        .from("agencies")
-        .update({ owner_id: user.id })
-        .eq("id", agency.id);
-
-    if (updateError) {
-        console.error("[onboarding] agency owner_id update error:", JSON.stringify(updateError));
-        // Non-blocking — agency and profile are created, just owner_id not set
     }
 
     return { success: true };
