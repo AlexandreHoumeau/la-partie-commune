@@ -77,6 +77,20 @@ export async function fetchCompanies({
   };
 }
 
+export async function deleteCompany(companyId: string): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("companies")
+    .delete()
+    .eq("id", companyId);
+
+  if (error) {
+    console.error("Erreur lors de la suppression de l'entreprise:", error);
+    throw new Error("Impossible de supprimer l'entreprise.");
+  }
+}
+
 export async function fetchCompanySectors(agencyId: string): Promise<string[]> {
   const supabase = await createClient();
 
