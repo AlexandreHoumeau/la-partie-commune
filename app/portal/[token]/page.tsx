@@ -200,7 +200,7 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
                                                         <input
                                                             type="file"
                                                             className="hidden"
-                                                            ref={el => fileInputRefs.current[item.id] = el}
+                                                            ref={el => { fileInputRefs.current[item.id] = el }}
                                                             onChange={(e) => {
                                                                 if (e.target.files?.[0]) {
                                                                     setFileInputs({ ...fileInputs, [item.id]: e.target.files[0] });

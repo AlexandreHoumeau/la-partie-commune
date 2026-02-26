@@ -3,7 +3,7 @@ import { ProjectHeader } from "@/components/projects/ProjectHeader";
 import { notFound } from "next/navigation";
 import { ProjectProvider } from "@/providers/project-provider";
 
-export default async function ProjectLayout({ children, params }: { children: React.ReactNode; params: { slug: string }; }) {
+export default async function ProjectLayout({ children, params }: { children: React.ReactNode; params: Promise<{ slug: string }>; }) {
     const { slug } = await params;
     const result = await getProjectBySlug(slug);
 

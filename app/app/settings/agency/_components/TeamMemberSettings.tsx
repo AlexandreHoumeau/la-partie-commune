@@ -3,7 +3,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { removeTeamMember } from "@/actions/agency.server";
+import { useTransition } from "react";
+import { toast } from "sonner";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,8 +25,21 @@ type TeamMemberSettingsProps = {
     inviteFormAction: (payload: FormData) => void
     inviteDialogOpen: boolean
     setInviteDialogOpen: (open: boolean) => void
+    onInviteClick: () => void
 }
-export default function TeamMemberSettings({ team, profile, inviteDialogOpen, setInviteDialogOpen, inviteState, isInvitePending, inviteFormAction, invites }: TeamMemberSettingsProps) {
+export default function TeamMemberSettings({ team, profile, inviteDialogOpen, setInviteDialogOpen, inviteState, isInvitePending, inviteFormAction, invites, onInviteClick }: TeamMemberSettingsProps) {
+    const [isRemoving, startRemoveTransition] = useTransition()
+
+    function handleRemoveMember(memberId: string) {
+        startRemoveTransition(async () => {
+            const result = await removeTeamMember(memberId)
+            if (result.success) {
+                toast.success(result.message)
+            } else {
+                toast.error(result.message)
+            }
+        })
+    }
 
     return (
         <TabsContent value="team" className="space-y-8">
@@ -37,12 +53,11 @@ export default function TeamMemberSettings({ team, profile, inviteDialogOpen, se
                         <CardDescription>Personnes ayant un accès actuel à l'agence.</CardDescription>
                     </div>
 
+                    <Button variant="outline" className="border-slate-200 hover:bg-slate-50 shadow-sm" onClick={onInviteClick}>
+                        <UserPlus className="h-4 w-4 mr-2 text-blue-600" /> Inviter un membre
+                    </Button>
+
                     <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" className="border-slate-200 hover:bg-slate-50 shadow-sm">
-                                <UserPlus className="h-4 w-4 mr-2 text-blue-600" /> Inviter un membre
-                            </Button>
-                        </DialogTrigger>
                         <DialogContent className="sm:max-w-[425px]">
                             <DialogHeader>
                                 <DialogTitle>Inviter un collaborateur</DialogTitle>
@@ -141,7 +156,11 @@ export default function TeamMemberSettings({ team, profile, inviteDialogOpen, se
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="w-48">
-                                                        <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/5 cursor-pointer">
+                                                        <DropdownMenuItem
+                                                            className="text-destructive focus:text-destructive focus:bg-destructive/5 cursor-pointer"
+                                                            disabled={isRemoving}
+                                                            onClick={() => handleRemoveMember(member.id)}
+                                                        >
                                                             <Trash2 className="h-4 w-4 mr-2" /> Retirer du compte
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>

@@ -3,10 +3,6 @@ import Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { supabaseAdmin } from '@/lib/supabase/admin'
 
-// Indispensable : désactiver le body parsing de Next.js pour lire la signature brute
-export const config = {
-    api: { bodyParser: false },
-}
 
 export async function POST(req: NextRequest) {
     const body = await req.text()

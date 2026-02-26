@@ -20,7 +20,7 @@ import Link from "next/link";
 import { AgencyBrandingDialog } from "./_components/AgencyBrandingDialog";
 
 export default async function AgencyOverviewPage() {
-  const { agency, team, invites = [], ai, profile } = await fetchSettingsData();
+  const { agency, team, invites = [], ai, profile, billing } = await fetchSettingsData();
   const trackingStats = agency?.id
     ? await fetchAgencyTrackingStats(agency.id)
     : { totalLinks: 0, totalClicks: 0, activeLinks: 0, lastClickedAt: null, deviceBreakdown: {}, topLinks: [] };
@@ -177,19 +177,28 @@ export default async function AgencyOverviewPage() {
                   <div className="relative z-10 flex items-center justify-between">
                     <div>
                       <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/40">Plan actuel</p>
-                      <p className="text-2xl font-semibold tracking-tight">Professional</p>
-                      <p className="mt-1 text-sm text-white/50 font-medium">49€ <span className="text-white/30 font-normal">/ mois</span></p>
+                      <p className="text-2xl font-semibold tracking-tight">
+                        {billing?.plan === 'PRO' ? 'Pro' : 'Free'}
+                      </p>
+                      <p className="mt-1 text-sm text-white/50 font-medium">
+                        {billing?.plan === 'PRO' ? '39€' : '0€'}
+                        <span className="text-white/30 font-normal"> / mois</span>
+                      </p>
                     </div>
                     <div className="text-right">
-                      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                        Plan Actif
-                      </span>
-                      <p className="mt-3 text-right text-xs text-white/40 font-medium">
-                        Prochain prélèvement
-                        <br />
-                        <span className="text-white/70">14 mars 2026</span>
-                      </p>
+                      {billing?.plan === 'PRO' ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                          Plan Actif
+                        </span>
+                      ) : (
+                        <Link
+                          href="/app/settings/billing"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white backdrop-blur-sm hover:bg-white/20 transition-colors"
+                        >
+                          Passer au PRO →
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </div>

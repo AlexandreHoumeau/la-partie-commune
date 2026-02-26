@@ -4,7 +4,7 @@ import { KanbanBoard } from "@/components/projects/KanbanBoard";
 import { notFound } from "next/navigation";
 
 
-export default async function ProjectBoardPage({ params }: { params: { slug: string } }) {
+export default async function ProjectBoardPage({ params }: { params: Promise<{ slug: string }> }) {
     const { slug } = await params;
     const projectResult = await getProjectBySlug(slug);
 

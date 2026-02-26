@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: { code: string } }
+	{ params }: { params: Promise<{ code: string }> }
 ) {
 	const { code } = await params;
 	const supabase = await createClient();

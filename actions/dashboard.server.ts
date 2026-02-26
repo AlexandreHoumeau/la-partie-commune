@@ -101,7 +101,7 @@ export async function getDashboardData(agencyId: string): Promise<DashboardData>
     totalProjectsCount: projects.length,
     pipelineRows,
     pipelineTotal,
-    favoriteOpps: (favoriteOppsData ?? []) as FavoriteOpp[],
+    favoriteOpps: (favoriteOppsData ?? []) as unknown as FavoriteOpp[],
   };
 }
 
@@ -116,5 +116,5 @@ export async function getDashboardRecentProjects(agencyId: string): Promise<Rece
     .order("created_at", { ascending: false })
     .limit(5);
 
-  return (data ?? []) as RecentProject[];
+  return (data ?? []) as unknown as RecentProject[];
 }

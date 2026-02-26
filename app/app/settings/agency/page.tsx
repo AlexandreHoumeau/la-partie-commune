@@ -9,13 +9,23 @@ import {
 } from "lucide-react"
 import { useActionState, useEffect, useState } from "react"
 import { useSettings } from "../settings-context"
+import { useUpgradeDialog } from "@/providers/UpgradeDialogProvider"
 import GeneralAgencySettings from "./_components/GeneralAgencySettings"
 import TeamMemberSettings from "./_components/TeamMemberSettings"
 
 export default function AgencyPage() {
     // On récupère agency, team et invites depuis le contexte
-    const { agency, team, invites = [], profile } = useSettings()
+    const { agency, team, invites = [], profile, billing } = useSettings()
     const [inviteDialogOpen, setInviteDialogOpen] = useState(false)
+    const { openUpgradeDialog } = useUpgradeDialog()
+
+    function handleInviteClick() {
+        if (billing?.plan !== 'PRO') {
+            openUpgradeDialog("Le plan FREE ne permet pas d'inviter des collaborateurs.", agency.id)
+        } else {
+            setInviteDialogOpen(true)
+        }
+    }
 
     // Actions Server avec useActionState
     const [agencyState, agencyFormAction, isAgencyPending] = useActionState(updateAgencyInformation, null)
@@ -48,7 +58,7 @@ export default function AgencyPage() {
                     </TabsTrigger>
                 </TabsList>
                 <GeneralAgencySettings agency={agency} isAgencyPending={isAgencyPending} agencyState={agencyState} agencyFormAction={agencyFormAction} />
-                <TeamMemberSettings team={team} invites={invites} profile={profile} inviteState={inviteState} inviteFormAction={inviteFormAction} isInvitePending={isInvitePending} inviteDialogOpen={inviteDialogOpen} setInviteDialogOpen={setInviteDialogOpen} />
+                <TeamMemberSettings team={team} invites={invites} profile={profile} inviteState={inviteState} inviteFormAction={inviteFormAction} isInvitePending={isInvitePending} inviteDialogOpen={inviteDialogOpen} setInviteDialogOpen={setInviteDialogOpen} onInviteClick={handleInviteClick} />
             </Tabs>
         </div>
     )

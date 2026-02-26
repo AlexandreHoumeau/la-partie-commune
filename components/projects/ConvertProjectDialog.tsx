@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createProjectFromOpportunity } from "@/actions/project.server";
-import type { OpportunityForProject } from "@/lib/validators/project";
+import type { OpportunityWithCompany } from "@/lib/validators/oppotunities";
 import { toast } from "sonner";
 import { Loader2, Rocket, Figma, Github, CalendarDays } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,7 @@ export function ConvertProjectDialog({
     open,
     onOpenChange
 }: {
-    opportunity: (OpportunityForProject & { name: string }) | null,
+    opportunity: OpportunityWithCompany | null,
     open: boolean,
     onOpenChange: (v: boolean) => void
 }) {
@@ -39,7 +39,7 @@ export function ConvertProjectDialog({
         if (!opportunity) return;
         
         setIsLoading(true);
-        const result = await createProjectFromOpportunity(opportunity, {
+        const result = await createProjectFromOpportunity({ ...opportunity, agency_id: opportunity.agency_id ?? '' }, {
             name, start_date: startDate, figma_url: figmaUrl, github_url: githubUrl
         });
         setIsLoading(false);
