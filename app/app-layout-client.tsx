@@ -1,24 +1,62 @@
 "use client"
 
 import { useState } from "react";
+import { Menu } from "lucide-react";
 import { AppSidebar } from "@/components/app-sidebar"
 import { NavigationProgress } from "@/components/navigation-progress"
 import { cn } from "@/lib/utils";
+import { useAgency } from "@/providers/agency-provider";
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isMobileOpen, setIsMobileOpen] = useState(false);
+    const { agency } = useAgency();
+
+    const primaryColor = agency?.primary_color || "#2563EB";
 
     return (
         <div className="h-screen bg-slate-50 flex overflow-hidden">
             <NavigationProgress />
-            <AppSidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+            <AppSidebar
+                isCollapsed={isCollapsed}
+                setIsCollapsed={setIsCollapsed}
+                isMobileOpen={isMobileOpen}
+                setIsMobileOpen={setIsMobileOpen}
+            />
 
-            <main className={cn(
-                "flex-1 overflow-y-auto overflow-x-hidden transition-all duration-300 flex flex-col",
-                isCollapsed ? "pl-20" : "pl-64"
+            <div className={cn(
+                "flex-1 flex flex-col overflow-hidden transition-all duration-300",
+                isCollapsed ? "md:pl-20" : "md:pl-64"
             )}>
-                {children}
-            </main>
+                {/* Mobile top bar */}
+                <header className="flex items-center gap-3 h-14 px-4 border-b border-slate-200 bg-white md:hidden shrink-0">
+                    <button
+                        onClick={() => setIsMobileOpen(true)}
+                        className="flex items-center justify-center h-9 w-9 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+                    >
+                        <Menu className="h-5 w-5" />
+                    </button>
+
+                    {/* Agency logo + name */}
+                    <div className="flex items-center gap-2">
+                        <div
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-white text-xs font-bold overflow-hidden"
+                            style={{ backgroundColor: primaryColor }}
+                        >
+                            {agency?.logo_url ? (
+                                <img src={agency.logo_url} alt={agency.name} className="w-full h-full object-contain p-0.5" />
+                            ) : (
+                                agency?.name?.charAt(0)?.toUpperCase() || "A"
+                            )}
+                        </div>
+                        <span className="font-bold text-slate-900 text-sm truncate">{agency?.name}</span>
+                    </div>
+                </header>
+
+                <main className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col">
+                    {children}
+                </main>
+            </div>
         </div>
     )
 }
