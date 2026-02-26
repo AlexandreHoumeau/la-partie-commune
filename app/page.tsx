@@ -38,11 +38,11 @@ export default function Home() {
           <Link className="text-sm font-medium text-slate-400 hover:text-white transition-colors hidden md:block" href="#pricing">
             Tarifs
           </Link>
-          <Link className="text-sm font-medium text-white hover:text-blue-400 transition-colors" href="/login">
+          <Link className="text-sm font-medium text-white hover:text-blue-400 transition-colors" href="/auth/login">
             Connexion
           </Link>
           <Button asChild className="bg-white text-slate-950 hover:bg-slate-200 font-semibold px-6">
-            <Link href="/signup">Essayer <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Link href="/auth/signup">Essayer <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
         </nav>
       </header>

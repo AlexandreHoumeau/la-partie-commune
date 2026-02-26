@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useTransition } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     Briefcase,
@@ -38,6 +38,8 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { useAgency } from "@/providers/agency-provider"
+import { signOut } from "@/actions/auth.actions"
+import { useRouter } from "next/navigation"
 
 const mainNav = [
     { label: "Tableau de bord", href: "/app", icon: LayoutDashboard },
@@ -70,6 +72,16 @@ export function AppSidebar({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMob
     useEffect(() => {
         setIsMobileOpen(false)
     }, [pathname, setIsMobileOpen])
+
+    const router = useRouter()
+    const [isPending, startTransition] = useTransition()
+
+    function handleSignOut() {
+        startTransition(async () => {
+            await signOut()
+            router.push("/auth/login")
+        })
+    }
 
     const fullName = `${first_name} ${last_name}`
     const initials = `${first_name?.charAt(0) || ""}${last_name?.charAt(0) || ""}`
@@ -243,9 +255,13 @@ export function AppSidebar({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMob
 
                         <DropdownMenuSeparator className="my-2 bg-slate-100" />
 
-                        <DropdownMenuItem className="rounded-lg text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer py-2.5">
+                        <DropdownMenuItem
+                            className="rounded-lg text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer py-2.5"
+                            disabled={isPending}
+                            onClick={handleSignOut}
+                        >
                             <LogOut className="mr-3 h-4 w-4" />
-                            <span className="font-medium">Déconnexion</span>
+                            <span className="font-medium">{isPending ? "Déconnexion..." : "Déconnexion"}</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

@@ -48,7 +48,7 @@ export function ProjectHeader({ project }: { project: any }) {
                     </div>
 
                     {/* Quick Assets Links (Figma, Repo, Live) */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         {project.figma_url && (
                             <Button variant="outline" size="sm" className="h-9 rounded-xl border-slate-200 text-slate-600 hover:bg-[#F24E1E]/10 hover:text-[#F24E1E] hover:border-[#F24E1E]/30 transition-colors" asChild>
                                 <a href={project.figma_url} target="_blank" rel="noopener noreferrer">
@@ -75,15 +75,15 @@ export function ProjectHeader({ project }: { project: any }) {
             </div>
 
             {/* BOTTOM BAR : Navigation Tabs */}
-            <div className="max-w-[1400px] mx-auto px-6">
-                <nav className="flex items-center gap-2">
+            <div className="max-w-[1400px] mx-auto">
+                <nav className="flex items-center gap-2 overflow-x-auto px-6 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
                     {tabs.map((tab) => {
                         const isActive = pathname === tab.path;
                         return (
                             <Link
                                 key={tab.path}
                                 href={tab.path}
-                                className={`relative px-4 py-3 text-sm font-medium transition-colors ${isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
+                                className={`relative px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap shrink-0 ${isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
                                     }`}
                             >
                                 <div className="flex items-center gap-2 relative z-10">

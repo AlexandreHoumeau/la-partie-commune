@@ -1,11 +1,40 @@
 "use client";
 
+import { useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { CompanyWithRelations } from "@/lib/validators/companies";
 import { cn } from "@/lib/utils";
-import { Globe, Mail, Phone } from "lucide-react";
+import { Globe, Mail, Phone, Trash2 } from "lucide-react";
+import { deleteCompany } from "@/actions/companies.server";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function CompanyCard({ company }: { company: CompanyWithRelations }) {
   const isClient = company.projects.length > 0;
+  const [isPending, startTransition] = useTransition();
+  const queryClient = useQueryClient();
+
+  function handleDelete() {
+    startTransition(async () => {
+      try {
+        await deleteCompany(company.id);
+        queryClient.invalidateQueries({ queryKey: ["companies"] });
+        toast.success(`"${company.name}" a été supprimée.`);
+      } catch {
+        toast.error("Impossible de supprimer l'entreprise.");
+      }
+    });
+  }
 
   return (
     <div className="bg-white border border-slate-200/75 rounded-3xl p-6 flex flex-col h-full transition-all duration-300 hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/60 hover:-translate-y-1">
@@ -25,16 +54,47 @@ export function CompanyCard({ company }: { company: CompanyWithRelations }) {
             )}
           </div>
         </div>
-        <span
-          className={cn(
-            "shrink-0 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full",
-            isClient
-              ? "bg-emerald-50 text-emerald-700"
-              : "bg-slate-100 text-slate-600"
-          )}
-        >
-          {isClient ? "Client" : "Prospect"}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span
+            className={cn(
+              "text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full",
+              isClient
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-slate-100 text-slate-600"
+            )}
+          >
+            {isClient ? "Client" : "Prospect"}
+          </span>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                className="h-7 w-7 flex items-center justify-center rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+                disabled={isPending}
+                title="Supprimer l'entreprise"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Supprimer {company.name} ?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action est irréversible. L&apos;entreprise sera définitivement supprimée ainsi que toutes ses données associées.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                >
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* Contact info */}

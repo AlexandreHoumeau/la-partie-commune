@@ -100,8 +100,8 @@ export default function OpportunityHeader({ opportunity }: { opportunity: Opport
       </div>
 
       {/* BOTTOM BAR : Navigation Tabs */}
-      <div className="max-w-[1400px] mx-auto px-6">
-        <nav className="flex items-center gap-1">
+      <div className="max-w-[1400px] mx-auto">
+        <nav className="flex items-center gap-1 overflow-x-auto px-6 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = isTabActive(tab.id);
@@ -111,7 +111,7 @@ export default function OpportunityHeader({ opportunity }: { opportunity: Opport
                 key={tab.id}
                 href={getTabHref(tab.id)}
                 className={cn(
-                  "relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors",
+                  "relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap shrink-0",
                   isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-700"
                 )}
               >

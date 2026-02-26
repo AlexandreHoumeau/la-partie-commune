@@ -23,7 +23,7 @@ export default async function OpportunityLayout({
         <OpportunityHeader opportunity={opportunity} />
 
         <main className="grid grid-cols-1 lg:grid-cols-5 flex-1 overflow-hidden">
-          <div className="lg:col-span-4 flex flex-col overflow-y-auto lg:px-8 py-6">
+          <div className="lg:col-span-4 flex flex-col overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
             {children}
           </div>
 
