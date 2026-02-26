@@ -38,3 +38,25 @@ export async function signup(data: SignupInput) {
     if (error) return { error: error.message };
     return { success: true };
 }
+
+export async function signOut() {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+}
+
+export async function resetPasswordForEmail(email: string) {
+    const supabase = await createClient();
+    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${baseUrl}/auth/callback?next=/auth/reset-password`,
+    });
+    if (error) return { error: error.message };
+    return { success: true };
+}
+
+export async function updatePassword(newPassword: string) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) return { error: error.message };
+    return { success: true };
+}
