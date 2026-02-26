@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { checkProjectLimit } from "@/lib/billing/checkLimit";
 import { revalidatePath } from "next/cache";
 import type {
   ActionResult,
@@ -55,6 +56,11 @@ export async function createProjectFromOpportunity(
   const supabase = await createClient();
 
   try {
+    const limitCheck = await checkProjectLimit(opportunity.agency_id);
+    if (!limitCheck.allowed) {
+      return { success: false, error: limitCheck.reason! };
+    }
+
     const slug = await generateUniqueSlug(supabase, projectData.name);
 
     const { data: project, error } = await supabase
@@ -101,6 +107,11 @@ export async function createProject(
   const supabase = await createClient();
 
   try {
+    const limitCheck = await checkProjectLimit(agencyId);
+    if (!limitCheck.allowed) {
+      return { success: false, error: limitCheck.reason! };
+    }
+
     let companyId: string | null = null;
 
     if (data.isNewCompany && data.newCompanyData?.name) {
@@ -190,7 +201,7 @@ export async function deleteProject(
 
 export async function getProjectBySlug(
   slug: string
-): Promise<ActionResult<unknown>> {
+): Promise<ActionResult<any>> {
   const supabase = await createClient();
 
   try {

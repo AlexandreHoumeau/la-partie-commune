@@ -47,7 +47,6 @@ export async function fetchSettingsData(): Promise<SettingsData> {
 
         team = members || []
 
-        console.log(profile.agency_id)
         // 5️⃣ Fetch pending invites
         const { data: invitesData } = await supabase
             .from('agency_invites')
@@ -69,6 +68,35 @@ export async function fetchSettingsData(): Promise<SettingsData> {
     }
 
 
+    let billing = null
+    if (profile.agency_id) {
+        const { data: agencyBilling } = await supabase
+            .from('agencies')
+            .select('plan, stripe_customer_id, subscription_status')
+            .eq('id', profile.agency_id)
+            .single()
+
+        const { count: projectCount } = await supabase
+            .from('projects')
+            .select('*', { count: 'exact', head: true })
+            .eq('agency_id', profile.agency_id)
+
+        const { count: memberCount } = await supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('agency_id', profile.agency_id)
+
+        if (agencyBilling) {
+            billing = {
+                plan: (agencyBilling.plan || 'FREE') as 'FREE' | 'PRO',
+                subscription_status: agencyBilling.subscription_status ?? null,
+                stripe_customer_id: agencyBilling.stripe_customer_id ?? null,
+                project_count: projectCount ?? 0,
+                member_count: memberCount ?? 0,
+            }
+        }
+    }
+
     return {
         profile,
         agency,
@@ -76,6 +104,6 @@ export async function fetchSettingsData(): Promise<SettingsData> {
         invites,
         ai: aiConfig || null,
         tracking: null,
-        billing: null
+        billing,
     }
 }

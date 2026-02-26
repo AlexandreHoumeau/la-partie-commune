@@ -2,6 +2,7 @@
 
 import { MessageSchema } from "@/lib/email_generator/utils";
 import { createClient } from "@/lib/supabase/server";
+import { checkAiEnabled } from "@/lib/billing/checkLimit";
 import { Mistral } from '@mistralai/mistralai';
 import { revalidatePath } from "next/cache";
 
@@ -91,6 +92,13 @@ export async function generateOpportunityMessage(
 	agencyId?: string
 ): Promise<{ subject: string | null; body: string; error?: string; id: string | null }> {
 	try {
+		if (agencyId) {
+			const aiCheck = await checkAiEnabled(agencyId);
+			if (!aiCheck.allowed) {
+				return { subject: null, body: "", error: aiCheck.reason!, id: null };
+			}
+		}
+
 		const apiKey = process.env.MISTRAL_API_KEY;
 		if (!apiKey) return { subject: null, body: "", error: "Clé API Mistral manquante", id: null };
 

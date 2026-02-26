@@ -2,6 +2,7 @@
 
 import { InviteEmail } from '@/emails/agency-invite'; // Ajustez le chemin
 import { createClient } from "@/lib/supabase/server"
+import { checkMemberLimit } from "@/lib/billing/checkLimit"
 import { inviteAgencyMemberSchema, InviteAgencyMemberState, UpdateAgencyState } from "@/lib/validators/agency"
 import crypto from "crypto"
 import { revalidatePath } from "next/cache"
@@ -177,6 +178,12 @@ export async function inviteTeamMember(
             }
         }
 
+        // Vérifier le quota de membres du plan
+        const limitCheck = await checkMemberLimit(senderProfile.agency_id)
+        if (!limitCheck.allowed) {
+            return { success: false, message: limitCheck.reason }
+        }
+
         // 1. Vérifier si l'utilisateur est déjà dans l'équipe
         const { data: existingMember } = await supabase
             .from("profiles")
@@ -216,12 +223,12 @@ export async function inviteTeamMember(
         }
 
         // 1. On récupère les infos nécessaires pour l'email
-        const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL}/invite?token=${token}`;
+        const inviteLink = `${process.env.NEXT_PUBLIC_SITE_URL}/invite?token=${token}`;
         const inviterName = `${senderProfile.first_name} ${senderProfile.last_name}`;
 
         // 2. Envoi de l'email
         const { data, error } = await resend.emails.send({
-            from: 'Votre Agence <notifications@votre-domaine.com>',
+            from: process.env.RESEND_FROM_EMAIL ?? 'Partie Commune <noreply@partiecommune.fr>',
             to: [validatedFields.data.email!],
             subject: `Invitation à rejoindre ${agency.name}`,
             react: InviteEmail({
