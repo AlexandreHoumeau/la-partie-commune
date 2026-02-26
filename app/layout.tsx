@@ -1,4 +1,5 @@
 import { ReactQueryProvider } from "@/providers/ReactQueryProvider";
+import { UpgradeDialogProvider } from "@/providers/UpgradeDialogProvider";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "sonner";
@@ -15,9 +16,35 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://partiecommune.fr'
+
 export const metadata: Metadata = {
-  title: "Partie Commune",
-  description: "Outil de gestion de projet",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Partie Commune — Gestion de projet pour agences",
+    template: "%s | Partie Commune",
+  },
+  description:
+    "La plateforme de gestion de projet pensée pour les agences. Portail client, collecte de contenus, validation par jalons et marque blanche.",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    url: siteUrl,
+    siteName: "Partie Commune",
+    title: "Partie Commune — Gestion de projet pour agences",
+    description:
+      "La plateforme de gestion de projet pensée pour les agences. Portail client, collecte de contenus, validation par jalons et marque blanche.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Partie Commune — Gestion de projet pour agences",
+    description:
+      "La plateforme de gestion de projet pensée pour les agences. Portail client, collecte de contenus, validation par jalons et marque blanche.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -26,14 +53,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="fr">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReactQueryProvider>
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
+          <UpgradeDialogProvider>
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
+          </UpgradeDialogProvider>
         </ReactQueryProvider>
         <Toaster />
       </body>

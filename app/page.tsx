@@ -295,9 +295,9 @@ export default function Home() {
              <p>© 2026 Partie Commune CMS.</p>
           </div>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-white transition-colors">Mentions Légales</Link>
-            <Link href="#" className="hover:text-white transition-colors">Contact</Link>
-            <Link href="#" className="hover:text-white transition-colors">Twitter X</Link>
+            <Link href="/mentions-legales" className="hover:text-white transition-colors">Mentions légales</Link>
+            <Link href="/politique-de-confidentialite" className="hover:text-white transition-colors">Confidentialité</Link>
+            <Link href="/cgu" className="hover:text-white transition-colors">CGU</Link>
           </div>
         </div>
       </footer>
