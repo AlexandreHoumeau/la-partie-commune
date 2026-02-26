@@ -72,7 +72,6 @@ export function useOpportunities({ pageSize = 10, agencyId, enabled = true }: Us
                 params.delete(key);
             }
         });
-        // console.log(params)
         router.push(`${pathname}?${params.toString()}`);
     };
 

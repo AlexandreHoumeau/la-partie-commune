@@ -42,6 +42,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { NewProjectFormValues, newProjectSchema } from "@/lib/validators/project";
 import { createProject } from "@/actions/project.server";
+import { useUpgradeDialog } from "@/providers/UpgradeDialogProvider";
 
 export function NewProjectModal({
     companies,
@@ -52,6 +53,7 @@ export function NewProjectModal({
 }) {
     const [open, setOpen] = useState(false);
     const [isComboboxOpen, setIsComboboxOpen] = useState(false);
+    const { openUpgradeDialog } = useUpgradeDialog();
 
     const form = useForm<NewProjectFormValues>({
         resolver: zodResolver(newProjectSchema),
@@ -74,7 +76,12 @@ export function NewProjectModal({
     async function onSubmit(data: NewProjectFormValues) {
         const result = await createProject(data, agencyId);
         if (!result.success) {
-            toast.error(result.error);
+            if (result.error.includes('plan PRO') || result.error.includes('Quota')) {
+                setOpen(false);
+                openUpgradeDialog(result.error, agencyId);
+            } else {
+                toast.error(result.error);
+            }
             return;
         }
         toast.success("Projet créé avec succès !");

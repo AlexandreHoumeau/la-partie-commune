@@ -181,8 +181,8 @@ function TaskCard({ task, index, onClick }: { task: any, index: number, onClick:
                     {...provided.dragHandleProps}
                     onClick={onClick}
                     className={cn(
-                        "bg-white p-4 rounded-xl border border-slate-200 shadow-sm group hover:border-indigo-300 hover:shadow-md transition-all select-none",
-                        snapshot.isDragging ? "shadow-xl border-indigo-500 scale-[1.02] rotate-1 z-50" : ""
+                        "bg-white p-4 rounded-xl border border-slate-200 shadow-sm group hover:border-slate-300 hover:shadow-md transition-all select-none",
+                        snapshot.isDragging ? "shadow-xl scale-[1.02] rotate-1 z-50" : ""
                     )}
                 >
                     <div className="flex justify-between items-start mb-3">
@@ -211,7 +211,10 @@ function TaskCard({ task, index, onClick }: { task: any, index: number, onClick:
 
                         {/* Assignee Avatar (Simulé si vide) */}
                         {task.assignee ? (
-                            <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[10px] font-bold border border-white ring-1 ring-slate-100">
+                            <div
+                                className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold border border-white ring-1 ring-slate-100 text-white"
+                                style={{ backgroundColor: "var(--brand-secondary, #6366F1)" }}
+                            >
                                 {task.assignee.first_name?.charAt(0)}{task.assignee.last_name?.charAt(0)}
                             </div>
                         ) : (
