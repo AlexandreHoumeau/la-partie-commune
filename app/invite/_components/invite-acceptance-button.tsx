@@ -22,7 +22,7 @@ export default function InviteAcceptanceButton({ token }: { token: string }) {
         toast.success("Bienvenue dans l'équipe !")
         router.push('/app') // Redirection vers le dashboard
       }
-    } catch (err) {
+    } catch {
       toast.error("Une erreur s'est produite.")
     } finally {
       setIsLoading(false)

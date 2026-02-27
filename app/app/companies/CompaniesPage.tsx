@@ -5,8 +5,6 @@ import { useCompanies } from "@/hooks/useCompanies";
 import { useLoadingBar } from "@/hooks/useLoadingBar";
 import { CompaniesView } from "@/components/companies/CompaniesView";
 import {
-  CompanyTab,
-  CompanySortKey,
   DEFAULT_TAB,
   DEFAULT_SORT,
 } from "@/lib/validators/companies";

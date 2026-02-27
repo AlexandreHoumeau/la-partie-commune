@@ -107,7 +107,7 @@ export type OpportunityWithCompany = Opportunity & {
 export const mapOpportunityWithCompanyToFormValues = (opportunity: OpportunityWithCompany): OpportunityFormValues => ({
   name: opportunity.name,
   description: opportunity.description || "",
-  company_name: opportunity?.company?.name!,
+  company_name: opportunity?.company?.name ?? "",
   company_email: opportunity?.company?.email || "",
   company_phone: opportunity?.company?.phone_number || "",
   company_website: opportunity?.company?.website || "",

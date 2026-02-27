@@ -1,16 +1,14 @@
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { mapContactViaLabel, mapOpportunityStatusLabel, OpportunityWithCompany } from "@/lib/validators/oppotunities";
 import { CONTACT_COLORS, STATUS_COLORS } from "@/utils/general";
 import {
   Briefcase,
   Building2,
+  ExternalLink,
   Globe,
-  LucideIcon,
   Mail,
   MapPin,
   Phone,
-  ExternalLink,
   Tag,
 } from "lucide-react";
 

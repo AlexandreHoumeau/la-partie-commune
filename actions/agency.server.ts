@@ -227,7 +227,7 @@ export async function inviteTeamMember(
         const inviterName = `${senderProfile.first_name} ${senderProfile.last_name}`;
 
         // 2. Envoi de l'email
-        const { data, error } = await resend.emails.send({
+        const { error } = await resend.emails.send({
             from: process.env.RESEND_FROM_EMAIL ?? 'Partie Commune <noreply@partiecommune.fr>',
             to: [validatedFields.data.email!],
             subject: `Invitation à rejoindre ${agency.name}`,
@@ -351,7 +351,7 @@ export async function updateAgencyBranding(
             const fileName = `${profile.agency_id}-${Math.random()}.${fileExt}`;
             const filePath = `logos/${fileName}`;
 
-            const { error: uploadError, data } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
                 .from('agency-branding')
                 .upload(filePath, logoFile, { upsert: true });
 

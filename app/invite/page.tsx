@@ -68,7 +68,7 @@ export default async function InvitePage({
                     <CardDescription className="text-base pt-2">
                         Vous avez été invité à rejoindre l'agence <br />
                         <span className="font-semibold text-slate-900 underline decoration-blue-500 decoration-2 underline-offset-4">
-                            {/* @ts-ignore - Pour gérer la jointure agencies */}
+                            {/* @ts-expect-error - Pour gérer la jointure agencies */}
                             {invite.agencies?.name}
                         </span>
                     </CardDescription>

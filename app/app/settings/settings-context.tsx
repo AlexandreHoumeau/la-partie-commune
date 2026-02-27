@@ -1,6 +1,5 @@
 'use client'
 
-import { Profile } from '@/lib/validators/profile'
 import { SettingsData } from '@/lib/validators/settings'
 import { createContext, useContext } from 'react'
 

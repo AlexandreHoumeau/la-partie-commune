@@ -63,7 +63,7 @@ export async function updateProfile(
             }
         }
         // 4. Update profile
-        const { data, error: updateError } = await supabase
+        const { error: updateError } = await supabase
             .from("profiles")
             .update({
                 first_name: validatedFields.data.first_name,

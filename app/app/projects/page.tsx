@@ -2,7 +2,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAuthenticatedUserContext } from "@/actions/profile.server";
 import Link from "next/link";
-import { Plus, FolderKanban, Globe, Github, Figma, ArrowRight, Building2, Calendar } from "lucide-react";
+import { FolderKanban, Globe, Github, Figma, ArrowRight, Building2, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NewProjectModal } from "@/components/projects/new-project-modal";
 import { DeleteProjectDialog } from "@/components/projects/delete-project-dialog";

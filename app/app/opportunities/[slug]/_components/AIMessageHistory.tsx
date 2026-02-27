@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Mail, MessageSquare, Copy, Clock } from "lucide-react";
 
 import { toast } from "sonner";
-import { get } from "http";
 import { getAIGeneratedMessages } from "@/actions/ai-messages";
 
 type AIMessage = {

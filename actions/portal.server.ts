@@ -1,7 +1,6 @@
 "use server";
 
 import { createClient } from "@supabase/supabase-js";
-import { revalidatePath } from "next/cache";
 
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -27,7 +26,7 @@ export async function getPortalData(magicToken: string) {
             return { success: false, error: "L'accès à ce portail a été suspendu par l'agence." };
         }
 
-        const { data: checklists, error: checklistError } = await supabaseAdmin
+        const { data: checklists } = await supabaseAdmin
             .from("project_checklists")
             .select("*")
             .eq("project_id", project.id)

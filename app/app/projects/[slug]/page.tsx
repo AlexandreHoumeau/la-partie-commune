@@ -8,7 +8,7 @@ import { CheckCircle2, ListChecks, KanbanSquare, Clock, AlignLeft, Building2, Ca
 export default function ProjectOverviewPage() {
     const project = useProject();
     const [stats, setStats] = useState({ totalTasks: 0, doneTasks: 0, totalChecklist: 0, doneChecklist: 0 });
-    const [isLoadingStats, setIsLoadingStats] = useState(true);
+    const [, setIsLoadingStats] = useState(true);
 
     useEffect(() => {
         if (project) {

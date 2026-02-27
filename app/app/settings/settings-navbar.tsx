@@ -1,6 +1,6 @@
 'use client'
 
-import { BarChart3, Building2, CreditCard, Sparkles, User } from 'lucide-react'
+import { Building2, CreditCard, Sparkles, User } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from "@/lib/utils"

@@ -59,7 +59,7 @@ export async function getAIGeneratedMessages(opportunityId: string) {
 
 		if (error) return { success: false, error: error.message, data: [] };
 		return { success: true, data: data || [] };
-	} catch (error) {
+	} catch {
 		return { success: false, error: "Une erreur est survenue", data: [] };
 	}
 }
@@ -79,7 +79,7 @@ export async function updateAIGeneratedMessage(
 
 		if (error) return { success: false, error: error.message };
 		return { success: true, data };
-	} catch (error) {
+	} catch {
 		return { success: false, error: "Une erreur est survenue" };
 	}
 }

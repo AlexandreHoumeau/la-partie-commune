@@ -1,6 +1,5 @@
-import { Info, MousePointerClick, Eye, ShieldCheck, ArrowRight } from "lucide-react";
+import { Info, MousePointerClick, Eye, ShieldCheck } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import Link from "next/link";
 
 export function TrackingGuide() {
     return (

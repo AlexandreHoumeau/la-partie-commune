@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
-export default function OpportunityActions({ opportunity }: any) {
+export default function OpportunityActions({ opportunity: _opportunity }: any) {
   return (
     <Card>
       <CardHeader>

@@ -1,7 +1,6 @@
 "use client";
 
 import { createTrackingLink, getTrackingLinks, toggleTrackingLink } from "@/actions/tracking.server";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -15,7 +14,6 @@ import {
     Loader2,
     Plus,
     ShieldAlert,
-    X,
     MousePointerClick
 } from "lucide-react";
 import { useEffect, useState } from "react";

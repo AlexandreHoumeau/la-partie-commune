@@ -5,7 +5,7 @@ import { ContactVia, mapContactViaLabel, mapOpportunityStatusLabel, OpportunityS
 import { CONTACT_COLORS, STATUS_COLORS } from "@/utils/general";
 import { ColumnDef } from "@tanstack/react-table";
 import dayjs from "dayjs";
-import { Edit, MoreHorizontal, Star, Trash2, Copy, ArrowUpDown, ExternalLink, Rocket } from "lucide-react";
+import { Edit, MoreHorizontal, Star, Trash2, Copy, ArrowUpDown, Rocket } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { cn } from "@/lib/utils";

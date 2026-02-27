@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { toast } from "sonner";
-import { generateOpportunityMessage, getAIGeneratedMessages, saveAIGeneratedMessage, updateAIGeneratedMessage } from "@/actions/ai-messages";
+import { generateOpportunityMessage, getAIGeneratedMessages, updateAIGeneratedMessage } from "@/actions/ai-messages";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import { OpportunityAIContext } from "@/lib/email_generator/utils";
 import { ContactVia } from "@/lib/validators/oppotunities";

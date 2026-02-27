@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, LinkIcon, RefreshCcw, Copy, Save, Sparkles, PlayCircle, PauseCircle } from "lucide-react";
+import { Loader2, LinkIcon, Copy, Save, Sparkles, PlayCircle, PauseCircle } from "lucide-react";
 
 export default function ProjectSettingsPage() {
     const project = useProject();

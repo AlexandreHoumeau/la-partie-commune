@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { useSettings } from '../settings-context'
-import { useActionState, useEffect } from 'react'
+import { useActionState } from 'react'
 import { Loader2, CheckCircle2, AlertCircle, User, Lock, Mail, Phone, Briefcase, Sparkles } from 'lucide-react'
 import { updateProfile } from '@/actions/profile.server'
 import { mapRoleToPosition } from '@/lib/validators/profile'
@@ -193,7 +193,7 @@ export default function ProfilePage() {
 }
 
 /** Composant Badge simple si non importé */
-function Badge({ children, className, variant = "outline" }: any) {
+function Badge({ children, className }: any) {
     return (
         <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium border ${className}`}>
             {children}

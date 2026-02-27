@@ -74,7 +74,7 @@ describe("MessageSchema", () => {
   });
 
   it("customContext est optionnel", () => {
-    const { customContext: _, ...withoutContext } = validPayload;
+    const { customContext: _customContext, ...withoutContext } = validPayload;
     const result = MessageSchema.safeParse(withoutContext);
     expect(result.success).toBe(true);
   });

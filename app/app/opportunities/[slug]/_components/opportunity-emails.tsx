@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, MousePointerClick } from "lucide-react"
 
-export default function OpportunityEmails({ opportunityId }: { opportunityId: string }) {
+export default function OpportunityEmails({ opportunityId: _opportunityId }: { opportunityId: string }) {
   // emails envoyés + tracking
   return (
     <Card>
