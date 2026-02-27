@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
@@ -39,11 +41,10 @@ export async function completeOnboarding({
 
     const slug = generateSlug(agencyName.trim());
 
-    // Step 1: Create profile first (required if owner_id FK references profiles.id)
-    // Actually, owner_id references auth.users which already exists, so insert agency with owner_id directly.
+    // Step 1: Create agency WITHOUT owner_id (owner_id FK references profiles.id which doesn't exist yet)
     const { data: agency, error: agencyError } = await supabaseAdmin
         .from("agencies")
-        .insert({ name: agencyName.trim(), slug, owner_id: user.id })
+        .insert({ name: agencyName.trim(), slug })
         .select()
         .single();
 
@@ -52,7 +53,7 @@ export async function completeOnboarding({
         throw new Error("Impossible de créer l'agence");
     }
 
-    // Step 2: Create profile
+    // Step 2: Create profile (now the agency exists so agency_id FK is satisfied)
     const { error: profileError } = await supabaseAdmin
         .from("profiles")
         .insert({
@@ -71,5 +72,17 @@ export async function completeOnboarding({
         throw new Error("Impossible de créer le profil");
     }
 
-    return { success: true };
+    // Step 3: Now that the profile exists, set owner_id on the agency
+    const { error: ownerError } = await supabaseAdmin
+        .from("agencies")
+        .update({ owner_id: user.id })
+        .eq("id", agency.id);
+
+    if (ownerError) {
+        console.error("[onboarding] agency owner_id update error:", JSON.stringify(ownerError));
+        // Non-fatal: profile and agency exist, just owner_id not set
+    }
+
+    revalidatePath("/", "layout");
+    redirect("/app");
 }

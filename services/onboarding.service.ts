@@ -36,6 +36,7 @@ export async function bootstrapUser(invitationToken?: string | null) { // <-- On
 
   // --- CAS A : NOUVELLE AGENCE (OWNER) ---
   if (!targetAgencyId && meta?.agency_name) {
+    // Insert agency without owner_id first: owner_id FK references profiles.id which doesn't exist yet
     const { data: agency, error: agencyError } = await supabaseAdmin
       .from("agencies")
       .insert({ name: meta.agency_name })
@@ -53,7 +54,7 @@ export async function bootstrapUser(invitationToken?: string | null) { // <-- On
     return null;
   }
 
-  // 3. Create profile
+  // 3. Create profile (agency exists so agency_id FK is satisfied)
   const { data: newProfile, error: profileError } = await supabaseAdmin
     .from("profiles")
     .insert({
@@ -68,6 +69,14 @@ export async function bootstrapUser(invitationToken?: string | null) { // <-- On
     .single();
 
   if (profileError) throw profileError;
+
+  // 4. If this user owns the agency, set owner_id now that the profile exists
+  if (userRole === "agency_admin") {
+    await supabaseAdmin
+      .from("agencies")
+      .update({ owner_id: user.id })
+      .eq("id", targetAgencyId);
+  }
 
   return newProfile;
 }

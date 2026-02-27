@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { AlertCircle, Building2, Loader2, Sparkles } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import {
     Form,
@@ -36,7 +36,6 @@ interface OnboardingFormProps {
 export function OnboardingForm({ defaultFirstName = "", defaultLastName = "" }: OnboardingFormProps) {
     const [error, setError] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
-    const router = useRouter();
 
     const form = useForm<FormValues>({
         resolver: zodResolver(schema),
@@ -52,9 +51,8 @@ export function OnboardingForm({ defaultFirstName = "", defaultLastName = "" }: 
         startTransition(async () => {
             try {
                 await completeOnboarding(values);
-                router.push("/app");
-                router.refresh();
-            } catch {
+            } catch (e) {
+                if (isRedirectError(e)) throw e;
                 setError("Une erreur est survenue. Veuillez réessayer.");
             }
         });
