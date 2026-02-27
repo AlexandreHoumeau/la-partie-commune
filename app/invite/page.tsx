@@ -21,13 +21,13 @@ export default async function InvitePage({
     if (!user) {
         const nextPath = encodeURIComponent(`/invite?token=${token}`);
         redirect(`/auth/login?next=${nextPath}`);
-    } 
-    
+    }
+
     // 2. Utilisation de supabaseAdmin pour bypasser la RLS
     // On sélectionne aussi le nom de l'agence via une jointure
     const { data: invite, error } = await supabaseAdmin
         .from('agency_invites')
-        .select('*, agencies(name)') 
+        .select('*, agencies(name)')
         .eq('token', token)
         .single()
 
@@ -68,7 +68,6 @@ export default async function InvitePage({
                     <CardDescription className="text-base pt-2">
                         Vous avez été invité à rejoindre l'agence <br />
                         <span className="font-semibold text-slate-900 underline decoration-blue-500 decoration-2 underline-offset-4">
-                            {/* @ts-expect-error - Pour gérer la jointure agencies */}
                             {invite.agencies?.name}
                         </span>
                     </CardDescription>
