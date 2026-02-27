@@ -39,6 +39,18 @@ export async function createTrackingLink(input: CreateTrackingLinkInput) {
 
         revalidatePath(`/opportunities/${input.opportunityId}`);
 
+        // Log timeline event (fire-and-forget)
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) {
+                supabase.from("opportunity_events").insert({
+                    opportunity_id: input.opportunityId,
+                    user_id: user.id,
+                    event_type: "tracking_link_created",
+                    metadata: { campaign_name: input.campaignName ?? null },
+                }).then(() => {});
+            }
+        });
+
         return {
             success: true,
             data,

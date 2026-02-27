@@ -45,7 +45,7 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
         if (textContent) formData.append("content", textContent);
         if (fileContent) formData.append("file", fileContent);
 
-        const result = await submitClientContent(item.id, formData);
+        const result = await submitClientContent(token, item.id, formData);
 
         setSubmittingId(null);
 

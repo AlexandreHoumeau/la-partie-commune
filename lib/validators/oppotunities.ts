@@ -135,3 +135,23 @@ export const ALL_CONTACT_VIA: ContactVia[] = [
   "instagram",
   "linkedin",
 ];
+
+// --- Timeline ---
+
+export type TimelineEventType =
+  | "created"
+  | "status_changed"
+  | "info_updated"
+  | "note_added"
+  | "ai_message_generated"
+  | "tracking_link_created";
+
+export type OpportunityEvent = {
+  id: string;
+  opportunity_id: string;
+  user_id: string | null;
+  event_type: TimelineEventType;
+  metadata: Record<string, any>;
+  created_at: string;
+  user: { first_name: string; last_name: string } | null;
+};

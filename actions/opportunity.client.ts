@@ -2,6 +2,26 @@ import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { generateSlug, getUniqueSlug } from "@/lib/utils";
 import { OpportunityFormValues, OpportunityStatus, OpportunityWithCompany } from "@/lib/validators/oppotunities";
 
+async function logEvent(
+    supabase: ReturnType<typeof createSupabaseBrowserClient>,
+    opportunityId: string,
+    eventType: string,
+    metadata: Record<string, any> = {}
+) {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        await supabase.from("opportunity_events").insert({
+            opportunity_id: opportunityId,
+            user_id: user.id,
+            event_type: eventType,
+            metadata,
+        });
+    } catch {
+        // Logging must never break the main flow
+    }
+}
+
 export async function searchCompanies(query: string) {
     if (!query) return [];
     const supabase = createSupabaseBrowserClient();
@@ -73,6 +93,8 @@ export async function createOpportunity(values: OpportunityFormValues, agencyId?
 
     if (oppError) throw oppError;
 
+    await logEvent(supabase, opportunity.id, "created");
+
     // 3️⃣ Optionally: add company to agency's companies array
     if (agencyId) {
         await supabase
@@ -102,10 +124,10 @@ export async function updateOpportunity(
         ...opportunityPayload
     } = payload;
 
-    // 1. Get company_id from opportunity
+    // 1. Get company_id and current status from opportunity
     const { data: existingOppotunity, error: fetchError } = await supabase
         .from("opportunities")
-        .select("company_id")
+        .select("company_id, status")
         .eq("id", id)
         .single();
 
@@ -137,6 +159,15 @@ export async function updateOpportunity(
         .single();
 
     if (error) throw error;
+
+    if (opportunityPayload.status !== existingOppotunity.status) {
+        await logEvent(supabase, id, "status_changed", {
+            from: existingOppotunity.status,
+            to: opportunityPayload.status,
+        });
+    } else {
+        await logEvent(supabase, id, "info_updated");
+    }
 
     return { ...opportunity, company: companyData };
 }
@@ -172,7 +203,13 @@ export async function updateOpportunityStatus(
     opportunityId: string,
     status: OpportunityStatus
 ) {
-    const supabase = await createSupabaseBrowserClient();
+    const supabase = createSupabaseBrowserClient();
+
+    const { data: current } = await supabase
+        .from("opportunities")
+        .select("status")
+        .eq("id", opportunityId)
+        .single();
 
     const { error } = await supabase
         .from("opportunities")
@@ -182,6 +219,11 @@ export async function updateOpportunityStatus(
     if (error) {
         throw error;
     }
+
+    await logEvent(supabase, opportunityId, "status_changed", {
+        from: current?.status ?? null,
+        to: status,
+    });
 }
 
 export async function updateOpportunityFavorite(

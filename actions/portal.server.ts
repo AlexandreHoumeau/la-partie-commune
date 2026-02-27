@@ -14,9 +14,9 @@ export async function getPortalData(magicToken: string) {
         const { data: project, error: projectError } = await supabaseAdmin
             .from("projects")
             .select(`
-                id, name, description, figma_url, deployment_url, is_portal_active, magic_token,
+                id, name, description, figma_url, deployment_url, is_portal_active,
                 company:companies(name),
-                agency:agencies(name) 
+                agency:agencies(name)
             `)
             .eq("magic_token", magicToken)
             .single();
@@ -39,19 +39,73 @@ export async function getPortalData(magicToken: string) {
     }
 }
 
-export async function submitClientContent(itemId: string, formData: FormData) {
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+
+const ALLOWED_MIME_TYPES: Record<string, string[]> = {
+    image: ["image/png", "image/jpeg", "image/svg+xml", "image/webp"],
+    file: [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/zip",
+        "application/x-zip-compressed",
+    ],
+    text: [],
+};
+
+export async function submitClientContent(magicToken: string, itemId: string, formData: FormData) {
     try {
+        // Resolve project from token and verify portal is active
+        const { data: project, error: projectError } = await supabaseAdmin
+            .from("projects")
+            .select("id, is_portal_active")
+            .eq("magic_token", magicToken)
+            .single();
+
+        if (projectError || !project) return { success: false, error: "Lien invalide." };
+        if (!project.is_portal_active) return { success: false, error: "Ce portail a été suspendu." };
+
+        // Verify the checklist item belongs to this project and hasn't been submitted yet
+        const { data: item, error: itemError } = await supabaseAdmin
+            .from("project_checklists")
+            .select("project_id, status")
+            .eq("id", itemId)
+            .single();
+
+        if (itemError || !item || item.project_id !== project.id) {
+            return { success: false, error: "Accès non autorisé." };
+        }
+        if (item.status === 'uploaded') {
+            return { success: false, error: "Cet élément a déjà été fourni." };
+        }
+
         const textContent = formData.get("content") as string;
         const file = formData.get("file") as File;
         const expectedType = formData.get("expected_type") as string;
+
+        const MAX_TEXT_LENGTH = 10_000;
+        if (textContent && textContent.length > MAX_TEXT_LENGTH) {
+            return { success: false, error: "Texte trop long (max 10 000 caractères)." };
+        }
 
         let fileUrl = null;
         let finalResponse = textContent || "";
 
         // Si le client a uploadé un fichier
         if (file && file.size > 0) {
+            // Server-side file size check
+            if (file.size > MAX_FILE_SIZE) {
+                return { success: false, error: "Fichier trop volumineux (max 5 Mo)." };
+            }
+
+            // Server-side MIME type validation
+            const allowedTypes = ALLOWED_MIME_TYPES[expectedType] ?? [];
+            if (allowedTypes.length > 0 && !allowedTypes.includes(file.type)) {
+                return { success: false, error: "Type de fichier non autorisé." };
+            }
+
             const fileExt = file.name.split('.').pop();
-            const fileName = `${itemId}-${Date.now()}.${fileExt}`;
+            const fileName = `${crypto.randomUUID()}-${Date.now()}.${fileExt}`;
 
             // Upload dans le bucket qu'on vient de créer
             const { error: uploadError } = await supabaseAdmin.storage

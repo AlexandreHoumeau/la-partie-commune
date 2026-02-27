@@ -222,6 +222,20 @@ export async function generateOpportunityMessage(
 			.select()
 			.single();
 
+		// Log timeline event (fire-and-forget)
+		if (savedMessage) {
+			supabase.auth.getUser().then(({ data: { user } }) => {
+				if (user) {
+					supabase.from("opportunity_events").insert({
+						opportunity_id: opportunity.id,
+						user_id: user.id,
+						event_type: "ai_message_generated",
+						metadata: { channel, tone },
+					}).then(() => {});
+				}
+			});
+		}
+
 		return { subject, body, id: savedMessage?.id || null };
 
 	} catch (error) {
