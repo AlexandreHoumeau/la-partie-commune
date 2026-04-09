@@ -588,3 +588,220 @@ export async function deleteGeneratedMessage(messageId: string) {
 	const { error } = await supabase.from("ai_generated_messages").delete().eq("id", messageId);
 	if (error) throw error;
 }
+
+// --- CHAT ENGINE ---
+
+export type ChatMessage = {
+	role: "user" | "assistant";
+	content: string;
+	created_at: string;
+};
+
+export type ConversationRow = {
+	id: string;
+	opportunity_id: string;
+	agency_id: string | null;
+	messages: ChatMessage[];
+	created_at: string;
+	updated_at: string;
+};
+
+export async function getConversation(opportunityId: string): Promise<{ data: ConversationRow | null }> {
+	const supabase = await createClient();
+	const { data } = await supabase
+		.from("ai_chat_conversations")
+		.select("*")
+		.eq("opportunity_id", opportunityId)
+		.maybeSingle();
+	return { data: data as ConversationRow | null };
+}
+
+export async function clearConversation(opportunityId: string): Promise<void> {
+	const supabase = await createClient();
+	await supabase
+		.from("ai_chat_conversations")
+		.delete()
+		.eq("opportunity_id", opportunityId);
+}
+
+export async function sendChatMessage(params: {
+	opportunityId: string;
+	agencyId?: string;
+	userMessage: string;
+	opportunity: import("@/lib/validators/oppotunities").OpportunityWithCompany;
+	channel: string;
+	tone: string;
+	length: string;
+	notes?: string[];
+	trackingLinkUrl?: string | null;
+}): Promise<{ content: string; error?: string }> {
+	const { opportunityId, agencyId, userMessage, opportunity, channel, tone, length, notes, trackingLinkUrl } = params;
+
+	try {
+		if (agencyId) {
+			const aiCheck = await checkAiEnabled(agencyId);
+			if (!aiCheck.allowed) {
+				return { content: "", error: aiCheck.reason! };
+			}
+		}
+
+		const apiKey = process.env.MISTRAL_API_KEY;
+		if (!apiKey) return { content: "", error: "Clé API Mistral manquante" };
+
+		const supabase = await createClient();
+
+		const [aiConfigData, agencyData, conversationData] = await Promise.all([
+			agencyId
+				? supabase.from("agency_ai_configs").select("*").eq("agency_id", agencyId).single().then((r) => r.data)
+				: Promise.resolve(null),
+			agencyId
+				? supabase.from("agencies").select("website").eq("id", agencyId).single().then((r) => r.data)
+				: Promise.resolve(null),
+			supabase
+				.from("ai_chat_conversations")
+				.select("*")
+				.eq("opportunity_id", opportunityId)
+				.maybeSingle()
+				.then((r) => r.data),
+		]);
+
+		const aiConfig = aiConfigData as { ai_context?: string; key_points?: string; custom_instructions?: string; tone?: string } | null;
+		const agencyWebsite: string | null = (agencyData as { website?: string } | null)?.website ?? null;
+		const existingConversation = conversationData as ConversationRow | null;
+		const history: ChatMessage[] = existingConversation?.messages || [];
+
+		const statusContext = {
+			inbound: "prospect entrant — il a pris contact en premier",
+			to_do: "première approche — aucun contact précédent",
+			first_contact: "suivi après un premier échange",
+			second_contact: "deuxième relance, toujours sans réponse",
+			proposal_sent: "relance après envoi d'une proposition commerciale",
+			negotiation: "en cours de négociation des termes",
+			won: "client gagné — message de bienvenue ou de lancement",
+			lost: "prospect perdu — l'opportunité est clôturée",
+		}[opportunity.status as string] || "contact professionnel";
+
+		const channelGuidelines = {
+			email: "email avec sujet en première ligne (\"Objet : ...\"), puis corps structuré",
+			instagram: "DM Instagram : très court, 3-5 lignes max",
+			linkedin: "InMail LinkedIn : professionnel mais accessible, 5-7 lignes max",
+			phone: "script d'appel : introduction → accroche → question (format points)",
+			IRL: "guide pour une rencontre physique (points clés à aborder)",
+		}[channel] || "message professionnel";
+
+		const toneLabel = tone === "formal" ? "professionnel mais direct" : tone === "friendly" ? "chaleureux et naturel" : "décontracté et authentique";
+		const lengthLabel = length === "short" ? "très court — 2 à 3 phrases, pas de padding" : "3 à 5 phrases — développé mais sans rembourrage";
+
+		const mistral = new Mistral({ apiKey });
+
+		let situationBrief: string | null = null;
+		const isFirstMessage = history.length === 0;
+		if (isFirstMessage && opportunity.description?.trim()) {
+			try {
+				const analysisResponse = await mistral.chat.complete({
+					model: "mistral-medium-latest",
+					messages: [
+						{
+							role: "system",
+							content: "Tu es un assistant commercial. Analyse les notes d'une opportunité et extrais ce qui est utile pour rédiger un message de prospection.",
+						},
+						{
+							role: "user",
+							content: `Prospect : ${opportunity.company?.name || "?"} (${opportunity.company?.business_sector || "secteur inconnu"})\nStatut : ${statusContext}\n\nNotes :\n"${opportunity.description}"\n\nEn 3 points courts, résume :\n1. La nature de la relation et la situation actuelle\n2. Ce que le prospect cherche (ou ne cherche pas encore)\n3. L'angle le plus juste pour un premier message\n\nSois factuel. Ne réponds qu'avec ces 3 points, sans introduction.`,
+						},
+					],
+					temperature: 0.2,
+				});
+				const raw = analysisResponse.choices?.[0]?.message?.content;
+				situationBrief = (Array.isArray(raw) ? raw.map((c) => ("text" in c ? c.text : "")).join("") : raw) || null;
+			} catch {
+				// Fall back to raw description if analysis fails
+			}
+		}
+
+		const systemPrompt = [
+			aiConfig?.ai_context
+				? aiConfig.ai_context
+				: "Tu rédiges des messages de prospection. Tu es une vraie personne qui s'adresse directement à un prospect — pas un copywriter, pas un outil marketing.",
+			"",
+			"CONTEXTE DE CETTE OPPORTUNITÉ :",
+			`- Prospect : ${opportunity.company?.name || "non spécifié"} (${opportunity.company?.business_sector || "secteur non spécifié"})`,
+			opportunity.company?.website ? `- Site web du prospect : ${opportunity.company.website}` : "",
+			`- Statut de la relation : ${statusContext}`,
+			situationBrief
+				? `\nANALYSE DE LA SITUATION (basée sur les notes) :\n${situationBrief}`
+				: opportunity.description
+					? `- Notes brutes : ${opportunity.description}`
+					: "- Aucune note disponible",
+			notes && notes.length > 0 ? `\nNOTES DE L'ÉQUIPE SUR CE PROSPECT :\n${notes.map((n) => `- ${n}`).join("\n")}` : "",
+			opportunity.status === "lost" ? "\nAttention : prospect perdu. Écrire une clôture élégante ou une tentative de reconquête subtile — pas de proposition directe." : "",
+			"",
+			"CE QUE PROPOSE L'AGENCE :",
+			aiConfig?.key_points || "- Accompagnement personnalisé\n- Réactivité\n- Résultats concrets",
+			agencyWebsite ? `Site web de l'agence : ${agencyWebsite}` : "",
+			aiConfig?.custom_instructions ? `\nINSTRUCTIONS SPÉCIFIQUES :\n${aiConfig.custom_instructions}` : "",
+			"",
+			`FORMAT : ${channelGuidelines}`,
+			`TON : ${toneLabel}`,
+			`LONGUEUR : ${lengthLabel}`,
+			"",
+			"RÈGLES ABSOLUES :",
+			"- Ne jamais utiliser de placeholders comme [Prénom], [Nom], [Entreprise]. Le message doit être prêt à envoyer tel quel.",
+			"- Si le prénom du destinataire est inconnu, commencer directement par \"Bonjour,\" sans prénom.",
+			"- Ne pas inventer de faits absents du contexte ci-dessus.",
+			"- Répondre UNIQUEMENT avec le message final — aucun commentaire, aucune explication.",
+			"- Les instructions données dans la conversation ont la priorité absolue. Les suivre à la lettre.",
+			trackingLinkUrl ? `- LIEN DE SUIVI À INCLURE : ${trackingLinkUrl} — intègre-le naturellement (portfolio, démo, ressource pertinente). Ne pas le mentionner comme "lien de suivi".` : "",
+			"- Interdits : \"je me permets\", \"n'hésitez pas\", \"je reste à votre disposition\", \"je serais ravi\", \"valeur ajoutée\", \"expertise reconnue\", \"accompagnement sur mesure\".",
+			"- Phrases courtes. Un seul angle par message. Finir par une question directe — pas un CTA formel.",
+		].filter(Boolean).join("\n");
+
+		const mistralMessages: Array<{ role: "user" | "assistant"; content: string }> = [
+			...history.map((m) => ({ role: m.role, content: m.content })),
+			{ role: "user", content: userMessage },
+		];
+
+		const response = await mistral.chat.complete({
+			model: "mistral-medium-latest",
+			messages: [
+				{ role: "system", content: systemPrompt },
+				...mistralMessages,
+			],
+			temperature: 0.82,
+		});
+
+		let aiContent = "";
+		const responseContent = response.choices?.[0]?.message?.content;
+		if (Array.isArray(responseContent)) {
+			aiContent = responseContent.map((c) => ("text" in c ? c.text : "")).join("");
+		} else {
+			aiContent = responseContent || "";
+		}
+
+		if (!aiContent) return { content: "", error: "Réponse vide du modèle." };
+
+		const now = new Date().toISOString();
+		const newMessages: ChatMessage[] = [
+			...history,
+			{ role: "user", content: userMessage, created_at: now },
+			{ role: "assistant", content: aiContent, created_at: now },
+		];
+
+		await supabase
+			.from("ai_chat_conversations")
+			.upsert(
+				{
+					opportunity_id: opportunityId,
+					agency_id: agencyId || null,
+					messages: newMessages,
+					updated_at: now,
+				},
+				{ onConflict: "opportunity_id" }
+			);
+
+		return { content: aiContent };
+	} catch (error) {
+		console.error("Erreur chat message:", error);
+		return { content: "", error: "Échec de la génération." };
+	}
+}
