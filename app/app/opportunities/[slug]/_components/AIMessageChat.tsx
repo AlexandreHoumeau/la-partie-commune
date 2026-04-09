@@ -483,7 +483,7 @@ export function AIMessageChat({
                                             key={note.id}
                                             className="text-xs text-muted-foreground line-clamp-2 leading-relaxed"
                                         >
-                                            {note.metadata?.text}
+                                            {(note.metadata as { text?: string } | null)?.text ?? ""}
                                         </p>
                                     ))}
                                 </div>
