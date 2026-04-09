@@ -134,8 +134,12 @@ function buildStructuredEmailPrompt(params: {
 }) {
 	return [
 		`Canal : ${params.channelGuidelines}`,
-		`Ton : ${params.tone === "formal" ? "tres formel et professionnel" : params.tone === "friendly" ? "chaleureux et aimable" : "decontracte et authentique"}`,
-		`Longueur : ${params.length === "short" ? "tres concis" : "moyen mais toujours compact"}`,
+		`Ton : ${params.tone === "formal" ? "très formel et professionnel" : params.tone === "friendly" ? "chaleureux et aimable" : "décontracté et authentique"}`,
+		`Longueur : ${params.length === "short" ? "très concis" : "moyen mais toujours compact"}`,
+		"",
+		"Tu aides une agence à rédiger un email de prospection froide, humain, simple, personnalisé et non agressif.",
+		"Le but n'est pas de vendre fort. Le but est de montrer qu'on a regardé la présence en ligne, de pointer 1 à 3 axes crédibles, de projeter une version plus forte du site, puis d'ouvrir une conversation légère.",
+		"Tu ne dois jamais parler d'une marque ou d'une agence spécifique autre que celle fournie dans le contexte. Aucune référence à Atelier Voisin ou à une URL publique par slug.",
 		"",
 		"TU NE REDIGES PAS L'EMAIL FINAL.",
 		"Tu dois retourner UNIQUEMENT 6 champs de travail, un par ligne, dans ce format exact :",
@@ -148,32 +152,48 @@ function buildStructuredEmailPrompt(params: {
 		"",
 		"REGLES DE SORTIE :",
 		"- pas de markdown",
-		"- pas de texte avant ou apres ces 6 champs",
-		"- pour improvements, mets 2 a 4 points separes par |",
-		"- subject = un objet d'email court et concret (3 a 7 mots idealement), suffisamment accrocheur sans etre putassier",
-		"- subject doit donner envie d'ouvrir en s'appuyant sur un angle reel : clarte, offre, conversion, prise de contact, parcours, credibilite",
-		"- evite les objets generiques ou plats comme Bonjour, Site web pour..., Prise de contact, Suite a..., Relance",
-		"- intro = 1 phrase maximum sur l'agence, en mentionnant explicitement le nom de l'agence",
-		"- observation = 1 phrase maximum, obligatoirement ancree dans la description si elle contient des points concrets",
+		"- pas de texte avant ou après ces 6 champs",
+		"- pour improvements, mets 3 à 4 points séparés par |",
+		"- subject = un objet d'email personnalisé, court, concret et un peu plus vivant qu'un objet neutre",
+		"- subject doit idéalement contenir le nom de l'entreprise et un angle réel : expertise, clarté, impact, image, réalisations, visibilité, prise de contact",
+		"- exemples de forme d'objet : Nom : un site à la hauteur de votre expertise | Nom : quelques pistes pour aller plus loin | Nom : rendre votre site plus clair et plus performant",
+		"- évite les objets génériques ou plats comme Bonjour, Site web pour..., Prise de contact, Suite à..., Relance",
+		"- intro = 1 phrase maximum sur l'agence, en mentionnant explicitement le nom de l'agence si disponible",
+		"- intro doit rester générique et réutilisable pour n'importe quelle agence, sans mention de duo, de vie personnelle ou de storytelling fondateur",
+		"- intro doit ressembler à une phrase de type : [Nom agence] accompagne des [type de structures] pour créer ou faire évoluer leur site afin qu'il reflète mieux leur image, leur expertise ou leur savoir-faire",
+		"- observation = 1 phrase maximum, obligatoirement ancrée dans la description si elle contient des points concrets",
+		"- observation doit toujours commencer de manière positive ou nuancée, puis amener diplomatiquement une limite du site actuel",
+		"- observation doit relier le site au métier du prospect, pas parler du site comme d'un objet abstrait",
+		"- observation doit idéalement suivre cette logique : En découvrant [Entreprise], on voit [point positif réel]. Le site actuel pourrait cependant [limite diplomatique].",
 		"- outcome = 1 phrase maximum",
+		"- outcome doit reformuler le bénéfice global : une vitrine plus claire, plus crédible, plus engageante ou plus performante, à la hauteur de leur activité",
+		"- outcome doit commencer par : L'objectif est de...",
 		"- cta = 1 phrase maximum, douce et sans pression",
-		"- evite les CTA commerciaux trop codes comme Si le sujet vous interesse..., 10 minutes par telephone, ou Quand seriez-vous disponible cette semaine ?",
-		"- prefere un CTA simple et naturel, par exemple proposer d'envoyer 2 ou 3 pistes concretes ou demander si cela vaut la peine d'en discuter",
-		"- n'invente aucun avis, resultat, fonctionnalite ou besoin non prouve",
+		"- évite les CTA commerciaux trop codés comme Si le sujet vous intéresse..., 10 minutes par téléphone, ou Quand seriez-vous disponible cette semaine ?",
+		"- préfère un CTA simple et naturel, par exemple proposer d'envoyer quelques pistes concrètes adaptées à l'entreprise, sans engagement",
+		"- improvements doit contenir uniquement des axes courts, concrets, crédibles et proportionnés au contexte",
+		"- chaque improvement doit être formulé comme une action concrète orientée résultat, pas comme un mot-clé vague",
+		"- n'écris jamais d'URL, de slug, de mention de lien email/slug ou de logique de tracking dans les 6 champs",
+		"- n'invente aucun avis, résultat, fonctionnalité ou besoin non prouvé",
+		"- évite le jargon marketing, les promesses trop commerciales, les phrases trop longues, les compliments excessifs et les jugements brutaux",
+		"- si le site semble déjà correct, adopte un angle doux : bonnes bases, univers cohérent, pourrait aller plus loin",
+		"- si aucun site n'est prouvé, parle de présence en ligne, vitrine, crédibilité, prise de contact, sans parler de refonte",
+		"- le rendu visé est un vrai email prêt à envoyer, lisible et aéré, pas un résumé minimaliste",
+		"- ne coupe jamais une phrase en fragment nominal. Chaque champ doit être une vraie phrase complète, sauf improvements",
 		"",
 		"CONTEXTE :",
 		params.agencyName ? `- Nom de l'agence : ${params.agencyName}` : "",
 		`- Entreprise : ${params.companyName}`,
-		`- Secteur : ${params.companySector || "non specifie"}`,
+		`- Secteur : ${params.companySector || "non spécifié"}`,
 		params.companyWebsite ? `- Site web du prospect : ${params.companyWebsite}` : "",
 		params.agencyContext ? `- Positionnement agence : ${params.agencyContext}` : "",
-		params.agencyKeyPoints.length > 0 ? `- Arguments agence disponibles (au plus 1 a reutiliser) : ${params.agencyKeyPoints.join(" | ")}` : "",
+		params.agencyKeyPoints.length > 0 ? `- Arguments agence disponibles (au plus 1 à réutiliser) : ${params.agencyKeyPoints.join(" | ")}` : "",
 		params.descriptionAnchors.length > 0
 			? `- Points concrets extraits de la description : ${params.descriptionAnchors.join(" | ")}`
 			: "- Aucun point concret extrait de la description",
 		`- Situation actuelle : ${params.statusContext}`,
 		params.opportunityDescription ? `- Description complete : ${params.opportunityDescription}` : "",
-		params.recentNotes.length > 0 ? `- Notes recentes : ${params.recentNotes.join(" | ")}` : "",
+		params.recentNotes.length > 0 ? `- Notes récentes : ${params.recentNotes.join(" | ")}` : "",
 		params.customContext ? `- Contexte additionnel : ${params.customContext}` : "",
 	].filter(Boolean).join("\n");
 }
@@ -483,7 +503,7 @@ export async function generateOpportunityMessage(
 		if (channel === "email") {
 			const structuredDraft = parseStructuredEmailDraft(messageText, companyName, agencyName);
 			subject = structuredDraft.subject;
-			body = buildStructuredEmailBody(structuredDraft, trackingLinkUrl);
+			body = buildStructuredEmailBody(structuredDraft, trackingLinkUrl, agencyName);
 		} else {
 			const extracted = extractMessageParts({
 				rawText: messageText,
@@ -530,7 +550,7 @@ export async function generateOpportunityMessage(
 			if (channel === "email") {
 				const repairedDraft = parseStructuredEmailDraft(messageText, companyName, agencyName);
 				subject = repairedDraft.subject;
-				body = buildStructuredEmailBody(repairedDraft, trackingLinkUrl);
+				body = buildStructuredEmailBody(repairedDraft, trackingLinkUrl, agencyName);
 			} else {
 				const repaired = extractMessageParts({
 					rawText: messageText,

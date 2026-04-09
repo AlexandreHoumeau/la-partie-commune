@@ -20,7 +20,16 @@ import { OpportunityAIContext } from "@/lib/email_generator/utils";
 import { ContactVia, OpportunityStatus, mapOpportunityStatusLabel } from "@/lib/validators/oppotunities";
 import { cn } from "@/lib/utils";
 import { useAgency } from "@/providers/agency-provider";
-type LinkRecord = { id: string; is_active: boolean; [key: string]: unknown };
+import { buildTrackingCampaignName } from "@/lib/tracking/utils";
+type ActiveTrackingLink = {
+    id: string;
+    short_code: string;
+    campaign_name: string | null;
+    original_url: string | null;
+    click_count?: number | null;
+    last_clicked_at?: string | null;
+    is_active: boolean;
+};
 
 // --- Pipeline order for stage pills ---
 const PIPELINE_ORDER: OpportunityStatus[] = [
@@ -244,8 +253,9 @@ export function AIMessageGenerator({
     const [tone, setTone] = useState(initialStageMessage?.tone ?? "friendly");
     const [length, setLength] = useState(initialStageMessage?.length ?? "medium");
     const [customContext, setCustomContext] = useState(initialStageMessage?.custom_context || "");
-    const [hasTrackingLink, setHasTrackingLink] = useState(false);
+    const [activeTrackingLink, setActiveTrackingLink] = useState<ActiveTrackingLink | null>(null);
     const [isCreatingTrackingLink, startTrackingLinkCreation] = useTransition();
+    const publicSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
 
     // Generation
     const [isPending, startTransition] = useTransition();
@@ -254,7 +264,8 @@ export function AIMessageGenerator({
     const loadTrackingLinkState = async () => {
         const result = await getTrackingLinks(opportunity.id);
         if (result.success && result.data) {
-            setHasTrackingLink(result.data.some((link: LinkRecord) => link.is_active));
+            const activeLinks = (result.data as ActiveTrackingLink[]).filter((link) => link.is_active);
+            setActiveTrackingLink(activeLinks[0] ?? null);
         }
     };
 
@@ -263,7 +274,8 @@ export function AIMessageGenerator({
 
         getTrackingLinks(opportunity.id).then((result) => {
             if (!cancelled && result.success && result.data) {
-                setHasTrackingLink(result.data.some((link: LinkRecord) => link.is_active));
+                const activeLinks = (result.data as ActiveTrackingLink[]).filter((link) => link.is_active);
+                setActiveTrackingLink(activeLinks[0] ?? null);
             }
         });
 
@@ -445,12 +457,17 @@ export function AIMessageGenerator({
                 opportunityId: opportunity.id,
                 agencyId: profile.agency_id,
                 originalUrl: website,
-                campaignName: `Email ${mapOpportunityStatusLabel[selectedStage]}`,
+                campaignName: buildTrackingCampaignName(selectedStage, opportunity.company?.name),
             });
 
             if (result.success) {
                 await loadTrackingLinkState();
-                toast.success("Lien de tracking généré");
+                if (result.trackingUrl) {
+                    navigator.clipboard.writeText(result.trackingUrl);
+                    toast.success("Lien de tracking généré et copié");
+                } else {
+                    toast.success("Lien de tracking généré");
+                }
                 return;
             }
 
@@ -475,9 +492,11 @@ export function AIMessageGenerator({
     const lengthOptions  = [{ value: "short", label: "Court" }, { value: "medium", label: "Moyen" }];
 
     const hasBody    = !!editedBody;
+    const hasTrackingLink = !!activeTrackingLink;
     const stageLabel = mapOpportunityStatusLabel[selectedStage];
     const descriptionPreview = opportunity.description?.trim() || "";
     const shortDescriptionPreview = descriptionPreview ? truncateText(descriptionPreview, 180) : "";
+    const activeTrackingUrl = activeTrackingLink && publicSiteUrl ? `${publicSiteUrl}/t/${activeTrackingLink.short_code}` : "";
     const latestHistory = allMessages
         .filter((m) => m.id !== messageId)
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -681,9 +700,43 @@ export function AIMessageGenerator({
                             </div>
 
                             {hasTrackingLink && (
-                                <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/30 dark:text-emerald-400">
-                                    <Link2 className="h-4 w-4 shrink-0" />
-                                    Lien de tracking prêt
+                                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-700 dark:border-emerald-800/40 dark:bg-emerald-950/30 dark:text-emerald-400">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <div className="flex items-center gap-2">
+                                            <Link2 className="h-4 w-4 shrink-0" />
+                                            <span className="font-medium">Lien injecté automatiquement dans l'email</span>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-7 rounded-lg px-2 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:hover:bg-emerald-900/40"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(activeTrackingUrl);
+                                                toast.success("Lien de tracking copié");
+                                            }}
+                                        >
+                                            <Copy className="mr-1 h-3.5 w-3.5" />
+                                            Copier
+                                        </Button>
+                                    </div>
+                                    <div className="mt-3 space-y-2 text-xs">
+                                        <div>
+                                            <p className="font-semibold uppercase tracking-wide text-emerald-700/80 dark:text-emerald-300/80">Lien tracké</p>
+                                            <p className="mt-1 truncate font-mono text-emerald-800 dark:text-emerald-200">{activeTrackingUrl}</p>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-emerald-700/70 dark:text-emerald-300/70">
+                                            <span className="text-[11px] uppercase tracking-wide">Redirige vers</span>
+                                        </div>
+                                        <div>
+                                            <p className="truncate text-emerald-800 dark:text-emerald-200">{activeTrackingLink.original_url || "URL cible non disponible"}</p>
+                                        </div>
+                                        {activeTrackingLink.campaign_name ? (
+                                            <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80">
+                                                Nom du lien : <span className="font-medium">{activeTrackingLink.campaign_name}</span>
+                                            </p>
+                                        ) : null}
+                                    </div>
                                 </div>
                             )}
 

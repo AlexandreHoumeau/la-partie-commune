@@ -17,7 +17,7 @@ type EvaluateMessageQualityInput = {
 };
 
 const CTA_REGEX =
-  /(appel|échange|créneau|retour|disponible|disponibilités|rendez-vous|rdv|qu[' ]en pensez-vous|cela vous dirait|seriez-vous|pouvons-nous|je vous propose|si cela vous parle)/i;
+  /(appel|échange|créneau|retour|disponible|disponibilités|rendez-vous|rdv|qu[' ]en pensez-vous|cela vous dirait|seriez-vous|pouvons-nous|je vous propose|si cela vous parle|si vous le souhaitez)/i;
 
 const GENERIC_OPENING_REGEXES = [
   /^j[' ]esp[eè]re que vous allez bien/i,
@@ -153,6 +153,10 @@ export function evaluateMessageQuality({
   const issues: string[] = [];
   const trimmedBody = body.trim();
   const firstLine = trimmedBody.split("\n").find(Boolean)?.trim() ?? "";
+  const bulletCount = trimmedBody
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => /^-\s+/.test(line)).length;
 
   const minimumLength = channel === "email" ? 80 : 24;
   if (trimmedBody.length < minimumLength) {
@@ -197,6 +201,26 @@ export function evaluateMessageQuality({
 
   if (trackingLinkUrl && !trimmedBody.includes(trackingLinkUrl)) {
     issues.push("Le lien de tracking actif doit etre inclus dans le message final.");
+  }
+
+  if (channel === "email" && bulletCount > 0 && bulletCount < 3) {
+    issues.push("L'email manque de matiere concrete. Il faut au moins 3 axes d'amelioration credibles.");
+  }
+
+  if (channel === "email" && !/En (découvrant|decouvrant|regardant) /i.test(trimmedBody)) {
+    issues.push("L'email doit contenir une observation explicite sur l'entreprise, du type « En découvrant ... ».");
+  }
+
+  if (channel === "email" && !/Il y aurait un vrai potentiel pour ?:/i.test(trimmedBody)) {
+    issues.push("L'email doit introduire clairement les pistes d'amelioration.");
+  }
+
+  if (channel === "email" && !/L['’]objectif est d/i.test(trimmedBody)) {
+    issues.push("L'email doit contenir une vraie phrase d'objectif commencant par « L'objectif est de... ».");
+  }
+
+  if (channel === "email" && !/sans engagement/i.test(trimmedBody)) {
+    issues.push("La fin doit rester legere et peu engageante, idealement avec une formule du type « sans engagement ».");
   }
 
   if (channel === "email" && trimmedBody.length > 900) {
