@@ -7,10 +7,14 @@ export default function TrackingPage() {
   const opportunity = useOpportunity();
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
+    <div className="w-full">
       <TrackingLinksManager
         opportunityId={opportunity.id}
         agencyId={opportunity.agency_id!}
+        opportunityStatus={opportunity.status}
+        companyName={opportunity.company?.name}
+        companyWebsite={opportunity.company?.website}
+        companyLinks={opportunity.company?.links ?? []}
       />
     </div>
   );
