@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef, useCallback } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback, type ElementType } from "react";
 import { toast } from "sonner";
 import {
     Copy, Loader2, Mail, MapPin, Phone, Save, Trash2, SendHorizonal, Wand2, Zap,
@@ -41,7 +41,7 @@ function InstagramSvg({ className }: { className?: string }) {
     );
 }
 
-const channelOptions = [
+const channelOptions: Array<{ value: ContactVia; label: string; icon: ElementType }> = [
     { value: "email",     label: "Email",       icon: Mail },
     { value: "linkedin",  label: "LinkedIn",    icon: LinkedinSvg },
     { value: "instagram", label: "Instagram",   icon: InstagramSvg },
@@ -62,7 +62,7 @@ const statusGenerateLabel: Record<OpportunityStatus, string> = {
     lost:           "un message de clôture élégant",
 };
 
-const channelLabel: Record<string, string> = {
+const channelLabel: Record<ContactVia, string> = {
     email: "par email",
     linkedin: "sur LinkedIn",
     instagram: "sur Instagram",
@@ -70,7 +70,7 @@ const channelLabel: Record<string, string> = {
     IRL: "pour une rencontre",
 };
 
-function buildAutoPrompt(channel: string, status: string): string {
+function buildAutoPrompt(channel: ContactVia, status: string): string {
     const what = statusGenerateLabel[status as OpportunityStatus] ?? "un message de prospection";
     const via = channelLabel[channel] ?? "par email";
     return `Rédige ${what} ${via}.`;
@@ -284,8 +284,8 @@ export function AIMessageChat({
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isPending, startTransition] = useTransition();
-    const [channel, setChannel] = useState<string>(
-        (opportunity.contact_via as string) || "email"
+    const [channel, setChannel] = useState<ContactVia>(
+        (opportunity.contact_via as ContactVia) || "email"
     );
     const [tone, setTone] = useState("friendly");
     const [length, setLength] = useState("medium");
