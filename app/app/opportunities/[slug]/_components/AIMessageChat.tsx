@@ -20,7 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useUserProfile } from "@/hooks/useUserProfile";
-import { OpportunityWithCompany, OpportunityStatus, OpportunityEvent } from "@/lib/validators/oppotunities";
+import { ContactVia, OpportunityWithCompany, OpportunityStatus, OpportunityEvent } from "@/lib/validators/oppotunities";
 import { cn } from "@/lib/utils";
 
 // Lucide doesn't export non-deprecated LinkedIn/Instagram icons — use SVG inline
@@ -124,7 +124,7 @@ function AssistantBubble({
 }: {
     content?: string;
     loading?: boolean;
-    channel: string;
+    channel: ContactVia;
     opportunityId: string;
     onSaved?: () => void;
 }) {
