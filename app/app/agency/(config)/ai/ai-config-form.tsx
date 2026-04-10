@@ -63,7 +63,7 @@ export default function AIConfigForm() {
                             id="context"
                             name="context"
                             defaultValue={ai?.ai_context || ""}
-                            placeholder="Ex: Agence spécialisée dans le résidentiel haut de gamme à Nantes..."
+                            placeholder="Ex: Agence specialisee dans la creation et l'evolution de sites vitrines pour des entreprises locales et des independants..."
                             className="min-h-[120px] bg-muted/50 border-border focus-visible:ring-blue-600"
                         />
                     </div>
@@ -74,7 +74,7 @@ export default function AIConfigForm() {
                             id="keyPoints"
                             name="keyPoints"
                             defaultValue={ai?.key_points || ""}
-                            placeholder="- Disponibilité 7j/7&#10;- Visites virtuelles 3D&#10;- Honoraires réduits"
+                            placeholder="- Approche sobre et personnalisee&#10;- Sites clairs, credibles et faciles a faire evoluer&#10;- Accompagnement rapide et humain"
                             className="min-h-[100px] bg-muted/50 border-border focus-visible:ring-blue-600"
                         />
                     </div>
@@ -131,7 +131,7 @@ export default function AIConfigForm() {
                             id="instructions"
                             name="instructions"
                             defaultValue={ai?.custom_instructions || ""}
-                            placeholder="Ex: Toujours terminer par une question ouverte, ne jamais utiliser de jargon technique..."
+                            placeholder="Ex: Toujours commencer positivement, rester diplomatique, relier le site au metier du prospect, ne jamais proposer de call trop vite..."
                             className="bg-muted/50 border-border focus-visible:ring-blue-600"
                         />
                     </div>

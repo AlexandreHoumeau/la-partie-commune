@@ -3,6 +3,7 @@
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createNotification } from "@/lib/notifications";
+import { parsePortalClientResponse } from "@/lib/portal-content";
 
 const supabaseAdmin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -104,9 +105,35 @@ export async function submitClientContent(magicToken: string, itemId: string, fo
         const file = formData.get("file") as File;
         const expectedType = formData.get("expected_type") as string;
 
-        const MAX_TEXT_LENGTH = 10_000;
+        const MAX_TEXT_LENGTH = 20_000;
         if (textContent && textContent.length > MAX_TEXT_LENGTH) {
-            return { success: false, error: "Texte trop long (max 10 000 caractères)." };
+            return { success: false, error: "Texte trop long (max 20 000 caractères)." };
+        }
+
+        if (expectedType === "text" && textContent) {
+            const structuredResponse = parsePortalClientResponse(textContent);
+            if (structuredResponse) {
+                const hasFilledSection = structuredResponse.sections.some((section) => section.content.trim());
+                if (!hasFilledSection) {
+                    return { success: false, error: "Ajoutez au moins une section de contenu." };
+                }
+
+                const hasInvalidSection = structuredResponse.sections.some((section) => (
+                    !section.title.trim() ||
+                    !section.content.trim() ||
+                    section.title.length > 120 ||
+                    section.content.length > 5000 ||
+                    (section.comment?.length ?? 0) > 1000
+                ));
+
+                if (hasInvalidSection || structuredResponse.sections.length > 12) {
+                    return { success: false, error: "Le format du contenu est invalide." };
+                }
+
+                if ((structuredResponse.generalComment?.length ?? 0) > 2000) {
+                    return { success: false, error: "La note générale est trop longue." };
+                }
+            }
         }
 
         let fileUrl = null;

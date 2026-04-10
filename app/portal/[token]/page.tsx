@@ -5,11 +5,14 @@ import Image from "next/image";
 import { getPortalData, submitClientContent } from "@/actions/portal.server";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { PortalUploadAccessButton } from "@/components/files/PortalUploadAccessButton";
+import { getChecklistDisplayDescription, getChecklistSuggestedSections } from "@/lib/portal-checklist";
+import { buildPortalResponsePreview, parsePortalClientResponse, stringifyPortalResponse, type PortalSectionBlock } from "@/lib/portal-content";
 import { toast } from "sonner";
 import {
     Loader2, PenTool, Globe, CheckCircle2, ArrowRight, UploadCloud,
-    FileType2, Image as ImageIcon, Check, MessageSquare, Shield
+    FileType2, Image as ImageIcon, Check, MessageSquare, Shield, Plus, Trash2
 } from "lucide-react";
 
 type PortalChecklistItem = {
@@ -37,13 +40,33 @@ type PortalProjectData = {
     portal_message?: string | null;
 };
 
+const createEmptySection = (): PortalSectionBlock => ({
+    id: crypto.randomUUID(),
+    title: "",
+    content: "",
+    comment: "",
+});
+
+const buildInitialTextSections = (items: PortalChecklistItem[]): Record<string, PortalSectionBlock[]> => {
+    return items.reduce<Record<string, PortalSectionBlock[]>>((acc, item) => {
+        if (item.expected_type === "text" && item.status !== "uploaded") {
+            const suggestedSections = getChecklistSuggestedSections(item.description);
+            acc[item.id] = suggestedSections.length > 0
+                ? suggestedSections.map((title) => ({ ...createEmptySection(), title }))
+                : [createEmptySection()];
+        }
+        return acc;
+    }, {});
+};
+
 export default function ClientPortalPage({ params }: { params: Promise<{ token: string }> }) {
     const { token } = use(params);
 
     const [isLoading, setIsLoading] = useState(true);
     const [data, setData] = useState<{ project: PortalProjectData; checklists: PortalChecklistItem[] } | null>(null);
     const [submittingId, setSubmittingId] = useState<string | null>(null);
-    const [textInputs, setTextInputs] = useState<Record<string, string>>({});
+    const [textSections, setTextSections] = useState<Record<string, PortalSectionBlock[]>>({});
+    const [generalComments, setGeneralComments] = useState<Record<string, string>>({});
     const [fileInputs, setFileInputs] = useState<Record<string, File | null>>({});
 
     const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
@@ -51,10 +74,12 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
     const loadData = async (magicToken: string) => {
         const result = await getPortalData(magicToken);
         if (result.success) {
+            const checklists = (result.checklists ?? []) as PortalChecklistItem[];
             setData({
                 project: result.project as PortalProjectData,
-                checklists: (result.checklists ?? []) as PortalChecklistItem[],
+                checklists,
             });
+            setTextSections(buildInitialTextSections(checklists));
         }
         else toast.error("Lien invalide ou expiré.");
         setIsLoading(false);
@@ -68,10 +93,12 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
             if (cancelled) return;
 
             if (result.success) {
+                const checklists = (result.checklists ?? []) as PortalChecklistItem[];
                 setData({
                     project: result.project as PortalProjectData,
-                    checklists: (result.checklists ?? []) as PortalChecklistItem[],
+                    checklists,
                 });
+                setTextSections(buildInitialTextSections(checklists));
             } else {
                 toast.error("Lien invalide ou expiré.");
             }
@@ -85,9 +112,53 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
         };
     }, [token]);
 
+    const updateSection = (itemId: string, sectionId: string, field: "title" | "content" | "comment", value: string) => {
+        setTextSections((current) => ({
+            ...current,
+            [itemId]: (current[itemId] ?? [createEmptySection()]).map((section) => (
+                section.id === sectionId ? { ...section, [field]: value } : section
+            )),
+        }));
+    };
+
+    const addSection = (itemId: string) => {
+        setTextSections((current) => ({
+            ...current,
+            [itemId]: [...(current[itemId] ?? [createEmptySection()]), createEmptySection()],
+        }));
+    };
+
+    const removeSection = (itemId: string, sectionId: string) => {
+        setTextSections((current) => {
+            const remaining = (current[itemId] ?? []).filter((section) => section.id !== sectionId);
+            return {
+                ...current,
+                [itemId]: remaining.length > 0 ? remaining : [createEmptySection()],
+            };
+        });
+    };
+
     const handleSubmit = async (item: PortalChecklistItem) => {
-        const textContent = textInputs[item.id];
+        let textContent: string | undefined;
         const fileContent = fileInputs[item.id];
+
+        if (item.expected_type === 'text') {
+            const sections = (textSections[item.id] ?? []).filter((section) => (
+                section.title.trim() || section.content.trim() || section.comment?.trim()
+            ));
+
+            if (sections.length === 0) return toast.error("Ajoutez au moins une section.");
+            if (sections.some((section) => !section.title.trim() || !section.content.trim())) {
+                return toast.error("Chaque section doit avoir un titre et un contenu.");
+            }
+
+            textContent = stringifyPortalResponse({
+                version: 1,
+                kind: "multi_section_text",
+                sections,
+                generalComment: generalComments[item.id]?.trim() || "",
+            });
+        }
 
         if (item.expected_type === 'text' && !textContent?.trim()) return toast.error("Veuillez saisir du texte.");
         if (item.expected_type !== 'text' && !fileContent) return toast.error("Veuillez sélectionner un fichier.");
@@ -104,6 +175,9 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
 
         if (result.success) {
             toast.success("Parfait ! Élément envoyé à l'équipe.");
+            setTextSections((current) => ({ ...current, [item.id]: [createEmptySection()] }));
+            setGeneralComments((current) => ({ ...current, [item.id]: "" }));
+            setFileInputs((current) => ({ ...current, [item.id]: null }));
             loadData(token);
         } else {
             toast.error(result.error ?? "Erreur lors de l'envoi.");
@@ -297,6 +371,12 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
                             {checklists.map((item) => {
                                 const isDone = item.status === 'uploaded';
                                 const Icon = item.expected_type === 'image' ? ImageIcon : FileType2;
+                                const sections = textSections[item.id] ?? [createEmptySection()];
+                                const structuredResponse = parsePortalClientResponse(item.client_response);
+                                const responsePreview = buildPortalResponsePreview(item.client_response);
+                                const canSubmitText = sections.some((section) => section.title.trim() && section.content.trim());
+                                const displayDescription = getChecklistDisplayDescription(item.description);
+                                const suggestedSections = getChecklistSuggestedSections(item.description);
 
                                 return (
                                     <div
@@ -318,8 +398,8 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
                                                     <h3 className={`text-lg font-bold ${isDone ? 'text-slate-500 line-through decoration-slate-300' : 'text-slate-900'}`}>
                                                         {item.title}
                                                     </h3>
-                                                    {item.description && (
-                                                        <p className="text-sm text-slate-500 mt-1">{item.description}</p>
+                                                    {displayDescription && (
+                                                        <p className="text-sm text-slate-500 mt-1">{displayDescription}</p>
                                                     )}
                                                 </div>
                                             </div>
@@ -328,12 +408,82 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
                                         {!isDone ? (
                                             <div className="space-y-4">
                                                 {item.expected_type === 'text' && (
-                                                    <Textarea
-                                                        placeholder="Écrivez votre contenu ici..."
-                                                        value={textInputs[item.id] || ""}
-                                                        onChange={(e) => setTextInputs({ ...textInputs, [item.id]: e.target.value })}
-                                                        className="min-h-[120px] bg-slate-50/50 rounded-2xl resize-none border-slate-200 text-base p-4"
-                                                    />
+                                                    <div className="space-y-4">
+                                                        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                                                            <p className="text-sm font-semibold text-slate-900">Ajoutez vos sections de contenu</p>
+                                                            <p className="mt-1 text-xs text-slate-500">
+                                                                Exemple : Hero, À propos, Témoignages, FAQ. Vous pouvez ajouter une note par section.
+                                                            </p>
+                                                            {suggestedSections.length > 0 && (
+                                                                <div className="mt-3 flex flex-wrap gap-2">
+                                                                    {suggestedSections.map((section) => (
+                                                                        <span
+                                                                            key={section}
+                                                                            className="inline-flex rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 border border-slate-200"
+                                                                        >
+                                                                            {section}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {sections.map((section, index) => (
+                                                            <div key={section.id} className="rounded-[1.5rem] border border-slate-200 bg-slate-50/50 p-4 space-y-3">
+                                                                <div className="flex items-center justify-between gap-3">
+                                                                    <p className="text-sm font-semibold text-slate-900">Section {index + 1}</p>
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        onClick={() => removeSection(item.id, section.id)}
+                                                                        className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                                                        disabled={sections.length === 1}
+                                                                    >
+                                                                        <Trash2 className="w-4 h-4" />
+                                                                    </Button>
+                                                                </div>
+
+                                                                <Input
+                                                                    placeholder="Titre de la section"
+                                                                    value={section.title}
+                                                                    onChange={(e) => updateSection(item.id, section.id, "title", e.target.value)}
+                                                                    className="h-11 rounded-xl border-slate-200 bg-white"
+                                                                />
+
+                                                                <Textarea
+                                                                    placeholder="Votre contenu pour cette section..."
+                                                                    value={section.content}
+                                                                    onChange={(e) => updateSection(item.id, section.id, "content", e.target.value)}
+                                                                    className="min-h-[120px] bg-white rounded-2xl resize-none border-slate-200 text-base p-4"
+                                                                />
+
+                                                                <Textarea
+                                                                    placeholder="Commentaire ou précision optionnelle"
+                                                                    value={section.comment || ""}
+                                                                    onChange={(e) => updateSection(item.id, section.id, "comment", e.target.value)}
+                                                                    className="min-h-[72px] bg-white rounded-2xl resize-none border-slate-200 text-sm p-4"
+                                                                />
+                                                            </div>
+                                                        ))}
+
+                                                        <Button
+                                                            type="button"
+                                                            variant="outline"
+                                                            onClick={() => addSection(item.id)}
+                                                            className="h-11 rounded-xl border-dashed"
+                                                        >
+                                                            <Plus className="w-4 h-4 mr-2" />
+                                                            Ajouter une section
+                                                        </Button>
+
+                                                        <Textarea
+                                                            placeholder="Commentaire général pour l'agence (optionnel)"
+                                                            value={generalComments[item.id] || ""}
+                                                            onChange={(e) => setGeneralComments({ ...generalComments, [item.id]: e.target.value })}
+                                                            className="min-h-[88px] bg-slate-50/50 rounded-2xl resize-none border-slate-200 text-sm p-4"
+                                                        />
+                                                    </div>
                                                 )}
 
                                                 {(item.expected_type === 'image' || item.expected_type === 'file') && (
@@ -378,7 +528,7 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
                                                 <div className="flex justify-end pt-2">
                                                     <Button
                                                         onClick={() => handleSubmit(item)}
-                                                        disabled={submittingId === item.id || (item.expected_type === 'text' ? !textInputs[item.id] : !fileInputs[item.id])}
+                                                        disabled={submittingId === item.id || (item.expected_type === 'text' ? !canSubmitText : !fileInputs[item.id])}
                                                         className="text-white rounded-xl px-6 h-12 shadow-md transition-all active:scale-95"
                                                         style={{ backgroundColor: primaryColor }}
                                                     >
@@ -403,6 +553,28 @@ export default function ClientPortalPage({ params }: { params: Promise<{ token: 
                                                         <PortalUploadAccessButton itemId={item.id} portalToken={token} variant="link">
                                                             {item.client_response} (Voir le fichier)
                                                         </PortalUploadAccessButton>
+                                                    ) : structuredResponse ? (
+                                                        <div className="space-y-3">
+                                                            <p className="text-sm font-medium text-slate-700">{responsePreview}</p>
+                                                            <div className="space-y-2">
+                                                                {structuredResponse.sections.map((section) => (
+                                                                    <div key={section.id} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                                                        <p className="text-sm font-semibold text-slate-900">{section.title}</p>
+                                                                        <p className="mt-1 text-sm text-slate-600 whitespace-pre-wrap">{section.content}</p>
+                                                                        {section.comment?.trim() && (
+                                                                            <p className="mt-2 text-xs text-slate-500 whitespace-pre-wrap">
+                                                                                Note : {section.comment}
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                            {structuredResponse.generalComment?.trim() && (
+                                                                <p className="text-xs text-slate-500 whitespace-pre-wrap">
+                                                                    Commentaire général : {structuredResponse.generalComment}
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                     ) : (
                                                         <p className="text-sm text-slate-700 truncate">{item.client_response}</p>
                                                     )}

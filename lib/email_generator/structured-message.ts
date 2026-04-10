@@ -11,28 +11,46 @@ function cleanSentence(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function ensureSentenceEnding(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  if (/[.!?…]$/.test(trimmed)) return trimmed;
+  return `${trimmed}.`;
+}
+
 function stripBulletPrefix(value: string): string {
   return value.replace(/^[-*•]\s*/, "").trim();
 }
 
 function fallbackSubject(companyName: string): string {
-  return `Des pistes concretes pour ${companyName}`;
+  return `${companyName} : quelques pistes pour aller plus loin`;
 }
 
 function fallbackOutcome(companyName: string): string {
-  return `L'objectif est de rendre ${companyName} plus clair et plus convaincant en ligne.`;
+  return `L'objectif est de faire de votre site une présence en ligne plus claire et plus crédible, à la hauteur de ${companyName}.`;
 }
 
 function fallbackCta(): string {
-  return "Si cela peut vous etre utile, je peux vous envoyer 2 ou 3 pistes concretes.";
+  return "Si vous le souhaitez, nous pouvons vous envoyer quelques pistes concrètes adaptées à votre activité, sans engagement.";
 }
 
 function fallbackIntro(agencyName?: string | null): string {
   if (agencyName?.trim()) {
-    return `${agencyName.trim()} accompagne les structures qui veulent faire evoluer leur site avec plus de clarte et de soin.`;
+    return `${agencyName.trim()} accompagne les entreprises qui veulent créer ou faire évoluer leur site pour mieux refléter leur image, leur expertise et la qualité de leur travail.`;
   }
 
-  return "Nous accompagnons les structures qui veulent faire evoluer leur site avec plus de clarte et de soin.";
+  return "Nous accompagnons les entreprises qui veulent créer ou faire évoluer leur site pour mieux refléter leur image, leur expertise et la qualité de leur travail.";
+}
+
+function ensureOutcomePrefix(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  if (/^l['’]objectif est/i.test(trimmed)) return trimmed;
+  const normalized = `${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`;
+  if (/^(a|à|e|é|è|ê|i|î|o|ô|u|û|une|un)\b/i.test(normalized)) {
+    return `L'objectif est d'${normalized}`;
+  }
+  return `L'objectif est de ${normalized}`;
 }
 
 export function parseStructuredEmailDraft(raw: string, companyName: string, agencyName?: string | null): StructuredEmailDraft {
@@ -70,22 +88,28 @@ export function parseStructuredEmailDraft(raw: string, companyName: string, agen
     .flatMap((line) => line.split("|"))
     .map(stripBulletPrefix)
     .map(cleanSentence)
+    .map(ensureSentenceEnding)
     .filter(Boolean)
     .slice(0, 4);
 
   return {
     subject: cleanSentence(buckets.subject.join(" ")) || fallbackSubject(companyName),
-    intro: cleanSentence(buckets.intro.join(" ")) || fallbackIntro(agencyName),
-    observation: cleanSentence(buckets.observation.join(" ")) || `En regardant ${companyName}, j'ai note qu'il y a probablement une marge de progression sur la clarte du site et la facon dont l'offre est presentee.`,
+    intro: ensureSentenceEnding(cleanSentence(buckets.intro.join(" "))) || fallbackIntro(agencyName),
+    observation: ensureSentenceEnding(cleanSentence(buckets.observation.join(" "))) || `En découvrant ${companyName}, on voit un vrai potentiel, mais le site actuel pourrait mieux mettre en valeur l'activité et structurer l'offre.`,
     improvements,
-    outcome: cleanSentence(buckets.outcome.join(" ")) || fallbackOutcome(companyName),
-    cta: cleanSentence(buckets.cta.join(" ")) || fallbackCta(),
+    outcome: ensureSentenceEnding(ensureOutcomePrefix(cleanSentence(buckets.outcome.join(" ")))) || fallbackOutcome(companyName),
+    cta: ensureSentenceEnding(cleanSentence(buckets.cta.join(" "))) || fallbackCta(),
   };
 }
 
-export function buildStructuredEmailBody(draft: StructuredEmailDraft, trackingLinkUrl?: string | null): string {
+export function buildStructuredEmailBody(
+  draft: StructuredEmailDraft,
+  trackingLinkUrl?: string | null,
+  agencyName?: string | null
+): string {
   const paragraphs: string[] = [
     "Bonjour,",
+    "J'espère que vous allez bien.",
     draft.intro,
     draft.observation,
   ];
@@ -101,7 +125,11 @@ export function buildStructuredEmailBody(draft: StructuredEmailDraft, trackingLi
   paragraphs.push(draft.cta);
 
   if (trackingLinkUrl) {
-    paragraphs.push(`Vous pouvez decouvrir notre demarche ici :\n${trackingLinkUrl}`);
+    paragraphs.push(`Vous pouvez consulter un exemple ou quelques pistes ici :\n${trackingLinkUrl}`);
+  }
+
+  if (agencyName?.trim()) {
+    paragraphs.push(`À bientôt,\n\n${agencyName.trim()}`);
   }
 
   return paragraphs.join("\n\n").trim();

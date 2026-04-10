@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn, formatBytes } from "@/lib/utils";
 import type { FileRecord, FolderRecord, ClientUpload } from "@/actions/files.server";
+import { buildPortalResponsePreview, portalResponseToPlainText } from "@/lib/portal-content";
 import { filterFiles, sortFiles, type SortKey, type TypeFilter } from "./driveUtils";
 import { PortalUploadAccessButton } from "./PortalUploadAccessButton";
 
@@ -404,7 +405,11 @@ export function DriveListView({
                                     <td className="px-4 py-3 text-sm text-muted-foreground">{clientUploads.length} élément{clientUploads.length !== 1 ? "s" : ""}</td>
                                     <td className="px-4 py-3" />
                                 </tr>
-                                {clientFolderExpanded && clientUploads.map((item) => (
+                                {clientFolderExpanded && clientUploads.map((item) => {
+                                    const responsePreview = buildPortalResponsePreview(item.client_response);
+                                    const plainTextResponse = portalResponseToPlainText(item.client_response);
+
+                                    return (
                                     <tr key={item.id} className="border-b border-border hover:bg-muted/40 transition-colors group">
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-3">
@@ -415,8 +420,8 @@ export function DriveListView({
                                                 }
                                                 <div className="min-w-0">
                                                     <p className="text-sm font-medium truncate max-w-[200px]">{item.title}</p>
-                                                    {!item.file_url && item.client_response && (
-                                                        <p className="text-xs text-muted-foreground line-clamp-2 max-w-[300px]">{item.client_response}</p>
+                                                    {!item.file_url && responsePreview && (
+                                                        <p className="text-xs text-muted-foreground line-clamp-2 max-w-[300px]">{responsePreview}</p>
                                                     )}
                                                 </div>
                                             </div>
@@ -431,10 +436,10 @@ export function DriveListView({
                                         <td className="px-4 py-3 text-right">
                                             {item.file_url ? (
                                                 <PortalUploadAccessButton itemId={item.id} variant="icon" />
-                                            ) : item.client_response ? (
+                                            ) : plainTextResponse ? (
                                                 <Button
                                                     variant="ghost" size="icon" className="h-7 w-7"
-                                                    onClick={() => handleCopy(item.id, item.client_response!)}
+                                                    onClick={() => handleCopy(item.id, plainTextResponse)}
                                                 >
                                                     {copiedId === item.id
                                                         ? <Check className="w-3.5 h-3.5 text-emerald-500" />
@@ -446,7 +451,8 @@ export function DriveListView({
                                             )}
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </React.Fragment>
                         )}
                     </tbody>

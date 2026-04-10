@@ -65,6 +65,19 @@ describe("evaluateMessageQuality", () => {
     expect(issues).toContain("Le nom de l'entreprise doit apparaitre dans le message pour renforcer la personnalisation.");
   });
 
+  it("flags an email that has too few concrete improvement bullets and no light close", () => {
+    const issues = evaluateMessageQuality({
+      channel: "email",
+      subject: "Acme : quelques pistes pour aller plus loin",
+      body: "Bonjour,\n\nJ'espère que vous allez bien.\n\nEn découvrant Acme, on voit une offre claire, mais le site pourrait gagner en impact.\n\nIl y aurait un vrai potentiel pour :\n- moderniser l'interface\n- optimiser le mobile\n\nL'objectif est de rendre le site plus engageant.\n\nJe peux vous envoyer quelques pistes si cela vous intéresse.",
+      companyName: "Acme",
+      trackingLinkUrl: null,
+    });
+
+    expect(issues).toContain("L'email manque de matiere concrete. Il faut au moins 3 axes d'amelioration credibles.");
+    expect(issues).toContain("La fin doit rester legere et peu engageante, idealement avec une formule du type « sans engagement ».");
+  });
+
   it("flags a generic email subject", () => {
     const issues = evaluateMessageQuality({
       channel: "email",
@@ -107,8 +120,8 @@ describe("evaluateMessageQuality", () => {
   it("accepts a message with personalization, CTA, and tracking link", () => {
     const issues = evaluateMessageQuality({
       channel: "email",
-      subject: "Clarifier l'offre de Acme",
-      body: "Bonjour Acme,\n\nJ'ai regarde votre positionnement dans le conseil RH et je pense qu'il y a une piste simple pour clarifier votre offre. J'ai reuni un exemple ici : https://wiply.app/t/abc123\n\nSi cela vous parle, seriez-vous disponible pour un echange de 15 minutes cette semaine ?",
+      subject: "Acme : quelques pistes pour aller plus loin",
+      body: "Bonjour,\n\nJ'espère que vous allez bien.\n\nNova Studio accompagne les entreprises qui veulent faire évoluer leur site pour mieux refléter leur expertise.\n\nEn découvrant Acme, on voit une offre claire dans le conseil RH, mais le site pourrait mieux hiérarchiser l'offre et fluidifier le parcours.\n\nIl y aurait un vrai potentiel pour :\n- clarifier les pages clés.\n- mieux hiérarchiser les contenus.\n- rendre la prise de contact plus visible.\n\nL'objectif est de faire de votre site une vitrine plus claire et plus crédible.\n\nSi vous le souhaitez, nous pouvons vous envoyer quelques pistes concrètes adaptées à Acme, sans engagement.\n\nVous pouvez consulter un exemple ou quelques pistes ici :\nhttps://wiply.app/t/abc123",
       companyName: "Acme",
       companyWebsite: "https://acme.fr",
       trackingLinkUrl: "https://wiply.app/t/abc123",

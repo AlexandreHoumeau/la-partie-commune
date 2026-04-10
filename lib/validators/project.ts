@@ -74,6 +74,7 @@ export interface ChecklistItemData {
   title: string;
   description?: string;
   expected_type: string;
+  suggested_sections?: string[];
 }
 
 // ─── Shared server action return type ─────────────────────────────────────

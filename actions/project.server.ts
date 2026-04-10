@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { checkProjectLimit } from "@/lib/billing/checkLimit";
 import { createNotification } from "@/lib/notifications";
+import { buildChecklistDescription } from "@/lib/portal-checklist";
 import { revalidatePath } from "next/cache";
 import { getPostHogClient } from "@/lib/posthog-server";
 import type {
@@ -582,7 +583,10 @@ export async function createChecklistItem(
     const { error } = await supabase.from("project_checklists").insert({
       project_id: projectId,
       title: data.title,
-      description: data.description,
+      description: buildChecklistDescription({
+        description: data.description,
+        suggestedSections: data.expected_type === "text" ? data.suggested_sections : [],
+      }),
       expected_type: data.expected_type,
       status: "pending",
     });
