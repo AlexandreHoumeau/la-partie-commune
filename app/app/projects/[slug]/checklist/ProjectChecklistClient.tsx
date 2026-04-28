@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PortalUploadAccessButton } from "@/components/files/PortalUploadAccessButton";
+import { getChecklistDisplayDescription, getChecklistSuggestedSections } from "@/lib/portal-checklist";
+import { buildPortalResponsePreview, parsePortalClientResponse } from "@/lib/portal-content";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Loader2, Plus, Type, FileImage, File, Trash2, CheckCircle2, Clock } from "lucide-react";
@@ -32,6 +34,7 @@ export function ProjectChecklistClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [suggestedSections, setSuggestedSections] = useState("");
   const [expectedType, setExpectedType] = useState("text");
 
   const loadChecklists = async () => {
@@ -46,13 +49,21 @@ export function ProjectChecklistClient({
     if (!title.trim()) return;
 
     setIsSubmitting(true);
-    const res = await createChecklistItem(projectId, { title, description, expected_type: expectedType });
+    const res = await createChecklistItem(projectId, {
+      title,
+      description,
+      expected_type: expectedType,
+      suggested_sections: expectedType === "text"
+        ? suggestedSections.split("\n").map((item) => item.trim()).filter(Boolean)
+        : [],
+    });
     setIsSubmitting(false);
 
     if (res.success) {
       toast.success("Demande ajoutée !");
       setTitle("");
       setDescription("");
+      setSuggestedSections("");
       await loadChecklists();
     } else {
       toast.error("Erreur lors de l'ajout.");
@@ -79,7 +90,7 @@ export function ProjectChecklistClient({
     <div className="max-w-[1000px] mx-auto p-6 md:p-8 space-y-8 animate-in fade-in duration-500 pb-20">
       <div>
         <h2 className="card-title">Chasseur de contenus</h2>
-        <p className="text-sm text-muted-foreground">Listez ici les éléments (textes, images, logos) que votre client doit vous fournir.</p>
+        <p className="text-sm text-muted-foreground">Listez ici les éléments que votre client doit vous fournir. Une demande de type texte peut maintenant contenir plusieurs sections et commentaires dans une seule réponse.</p>
       </div>
 
       <form onSubmit={handleAddItem} className="bg-card p-6 rounded-2xl border border-border shadow-sm flex flex-col md:flex-row gap-4 items-end">
@@ -91,6 +102,16 @@ export function ProjectChecklistClient({
             onChange={(e) => setTitle(e.target.value)}
             className="h-10 bg-muted/50 shadow-none"
             required
+          />
+        </div>
+
+        <div className="flex-1 w-full space-y-2">
+          <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Contexte</Label>
+          <Input
+            placeholder="Ex: Contenu de la page d'accueil"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="h-10 bg-muted/50 shadow-none"
           />
         </div>
 
@@ -114,6 +135,20 @@ export function ProjectChecklistClient({
         </Button>
       </form>
 
+      {expectedType === "text" && (
+        <div className="bg-card p-5 rounded-2xl border border-border shadow-sm space-y-2">
+          <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Sections suggérées</Label>
+          <textarea
+            value={suggestedSections}
+            onChange={(e) => setSuggestedSections(e.target.value)}
+            rows={4}
+            placeholder={"Hero\nÀ propos\nServices\nFAQ"}
+            className="w-full rounded-xl bg-muted/50 border border-border px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
+          />
+          <p className="text-xs text-muted-foreground">Une ligne par section. Le client pourra partir de cette structure puis l’adapter.</p>
+        </div>
+      )}
+
       <div className="space-y-3">
         {isLoading ? (
           <div className="p-8 text-center text-muted-foreground text-sm">Chargement des demandes...</div>
@@ -122,7 +157,13 @@ export function ProjectChecklistClient({
             Aucune demande pour le moment. Ajoutez le premier élément ci-dessus !
           </div>
         ) : (
-          items.map((item) => (
+          items.map((item) => {
+            const structuredResponse = parsePortalClientResponse(item.client_response);
+            const responsePreview = buildPortalResponsePreview(item.client_response);
+            const displayDescription = getChecklistDisplayDescription(item.description);
+            const suggested = getChecklistSuggestedSections(item.description);
+
+            return (
             <div key={item.id} className="group bg-card p-5 rounded-2xl border border-border shadow-sm transition-all hover:border-blue-200 dark:hover:border-blue-800/60 flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -131,6 +172,9 @@ export function ProjectChecklistClient({
                   </div>
                   <div>
                     <h4 className="card-title">{item.title}</h4>
+                    {displayDescription && (
+                      <p className="mt-1 text-sm text-muted-foreground">{displayDescription}</p>
+                    )}
                     <div className="flex items-center gap-2 mt-1">
                       {item.status === "pending" ? (
                         <span className="inline-flex items-center text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-md">
@@ -155,6 +199,16 @@ export function ProjectChecklistClient({
                 </Button>
               </div>
 
+              {suggested.length > 0 && (
+                <div className="ml-14 flex flex-wrap gap-2">
+                  {suggested.map((section) => (
+                    <span key={section} className="inline-flex rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 px-2.5 py-1 text-[11px] font-medium">
+                      {section}
+                    </span>
+                  ))}
+                </div>
+              )}
+
               {item.status === "uploaded" && (
                 <div className="mt-2 p-4 bg-muted rounded-xl border border-border ml-14">
                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Réponse du client :</p>
@@ -166,13 +220,32 @@ export function ProjectChecklistClient({
                     >
                       Télécharger / Voir le fichier ({item.client_response})
                     </PortalUploadAccessButton>
+                  ) : structuredResponse ? (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-foreground">{responsePreview}</p>
+                      <div className="space-y-2">
+                        {structuredResponse.sections.map((section) => (
+                          <div key={section.id} className="rounded-lg border border-border bg-card px-3 py-2">
+                            <p className="text-sm font-semibold text-foreground">{section.title}</p>
+                            <p className="mt-1 text-sm text-muted-foreground whitespace-pre-wrap">{section.content}</p>
+                            {section.comment?.trim() && (
+                              <p className="mt-2 text-xs text-muted-foreground whitespace-pre-wrap">Note : {section.comment}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      {structuredResponse.generalComment?.trim() && (
+                        <p className="text-xs text-muted-foreground whitespace-pre-wrap">Commentaire général : {structuredResponse.generalComment}</p>
+                      )}
+                    </div>
                   ) : (
                     <p className="text-sm text-foreground whitespace-pre-wrap">{item.client_response}</p>
                   )}
                 </div>
               )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

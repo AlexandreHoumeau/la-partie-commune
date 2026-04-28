@@ -52,7 +52,7 @@ describe("parseStructuredEmailDraft", () => {
       "Atelier Voisin"
     );
 
-    expect(draft.intro).toBe("Atelier Voisin accompagne les entreprises qui veulent creer ou faire evoluer leur site pour le rendre plus clair, plus visible et plus efficace commercialement.");
+    expect(draft.intro).toBe("Atelier Voisin accompagne les entreprises qui veulent créer ou faire évoluer leur site pour mieux refléter leur image, leur expertise et la qualité de leur travail.");
   });
 });
 

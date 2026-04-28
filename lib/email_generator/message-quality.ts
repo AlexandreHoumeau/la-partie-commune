@@ -211,6 +211,10 @@ export function evaluateMessageQuality({
     issues.push("L'email doit contenir une observation explicite sur l'entreprise, du type « En découvrant ... ».");
   }
 
+  if (channel === "email" && !/Il y aurait un vrai potentiel pour ?:/i.test(trimmedBody)) {
+    issues.push("L'email doit introduire clairement les pistes d'amelioration.");
+  }
+
   if (channel === "email" && !/L['’]objectif est d/i.test(trimmedBody)) {
     issues.push("L'email doit contenir une vraie phrase d'objectif commencant par « L'objectif est de... ».");
   }

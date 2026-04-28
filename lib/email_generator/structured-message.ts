@@ -31,19 +31,19 @@ function fallbackSubject(companyName: string): string {
 }
 
 function fallbackOutcome(companyName: string): string {
-  return `L'objectif est d'avoir une presence en ligne plus claire et plus credible, a la hauteur de ${companyName}.`;
+  return `L'objectif est d'avoir une présence en ligne plus claire et plus crédible, à la hauteur de ${companyName}.`;
 }
 
 function fallbackCta(): string {
-  return "Si vous le souhaitez, je peux vous envoyer 2 ou 3 pistes concretes adaptees a votre activite, sans engagement.";
+  return "Si vous le souhaitez, nous pouvons vous envoyer quelques pistes concrètes adaptées à votre activité, sans engagement.";
 }
 
 function fallbackIntro(agencyName?: string | null): string {
   if (agencyName?.trim()) {
-    return `${agencyName.trim()} accompagne les entreprises qui veulent creer ou faire evoluer leur site pour le rendre plus clair, plus visible et plus efficace commercialement.`;
+    return `${agencyName.trim()} accompagne les entreprises qui veulent créer ou faire évoluer leur site pour mieux refléter leur image, leur expertise et la qualité de leur travail.`;
   }
 
-  return "Nous accompagnons les entreprises qui veulent creer ou faire evoluer leur site pour le rendre plus clair, plus visible et plus efficace commercialement.";
+  return "Nous accompagnons les entreprises qui veulent créer ou faire évoluer leur site pour mieux refléter leur image, leur expertise et la qualité de leur travail.";
 }
 
 function ensureOutcomePrefix(value: string): string {
@@ -53,6 +53,9 @@ function ensureOutcomePrefix(value: string): string {
   const normalized = `${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`;
   if (/^(une|un|des|la|le|les)\b/i.test(normalized)) {
     return `L'objectif est d'avoir ${normalized}`;
+  }
+  if (/^(a|à|e|é|è|ê|i|î|o|ô|u|û)\b/i.test(normalized)) {
+    return `L'objectif est d'${normalized}`;
   }
   return `L'objectif est de ${normalized}`;
 }
@@ -120,7 +123,7 @@ export function parseStructuredEmailDraft(raw: string, companyName: string, agen
   return {
     subject: cleanSentence(buckets.subject.join(" ")) || fallbackSubject(companyName),
     intro: normalizeIntro(cleanSentence(buckets.intro.join(" ")), companyName, agencyName),
-    observation: ensureSentenceEnding(cleanSentence(buckets.observation.join(" "))) || `En decouvrant ${companyName}, on comprend bien l'activite, mais le site pourrait mieux structurer l'offre et rassurer des le premier coup d'oeil.`,
+    observation: ensureSentenceEnding(cleanSentence(buckets.observation.join(" "))) || `En découvrant ${companyName}, on comprend bien l'activité, mais le site pourrait mieux structurer l'offre et rassurer dès le premier coup d'oeil.`,
     improvements,
     outcome: ensureSentenceEnding(ensureOutcomePrefix(cleanSentence(buckets.outcome.join(" ")))) || fallbackOutcome(companyName),
     cta: ensureSentenceEnding(cleanSentence(buckets.cta.join(" "))) || fallbackCta(),
