@@ -1,6 +1,7 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { OpportunityStatus, ContactVia, ALL_STATUSES, ALL_CONTACT_VIA } from "@/lib/validators/oppotunities";
 import { fetchOpportunities, fetchOpportunityStatusCounts } from "@/actions/opportunity.server";
 
@@ -15,6 +16,27 @@ type UseOpportunitiesOptions = {
     initialStatusCounts?: Awaited<ReturnType<typeof fetchOpportunityStatusCounts>>;
 };
 
+const OPPORTUNITY_FILTERS_STORAGE_KEY = "opportunity-list-filters";
+const OPPORTUNITY_FILTER_PARAM_KEYS = ["page", "pageSize", "search", "status", "contact_via", "starred"] as const;
+
+function hasOpportunityFilterParams(params: URLSearchParams) {
+    return OPPORTUNITY_FILTER_PARAM_KEYS.some((key) => params.has(key));
+}
+
+function shouldPersistOpportunityFilters(params: URLSearchParams, defaultPageSize: number) {
+    const page = params.get("page");
+    const pageSize = params.get("pageSize");
+
+    return (
+        Boolean(params.get("search")) ||
+        Boolean(params.get("status")) ||
+        Boolean(params.get("contact_via")) ||
+        params.get("starred") === "true" ||
+        (page !== null && page !== "1") ||
+        (pageSize !== null && pageSize !== defaultPageSize.toString())
+    );
+}
+
 export function useOpportunities({
     pageSize = 10,
     agencyId,
@@ -25,6 +47,16 @@ export function useOpportunities({
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (hasOpportunityFilterParams(params)) return;
+
+        const savedFilters = window.localStorage.getItem(OPPORTUNITY_FILTERS_STORAGE_KEY);
+        if (savedFilters) {
+            router.replace(`${pathname}?${savedFilters}`);
+        }
+    }, [pathname, router, searchParams]);
 
     // Parse URL params
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -87,6 +119,13 @@ export function useOpportunities({
                 params.delete(key);
             }
         });
+
+        if (shouldPersistOpportunityFilters(params, pageSize)) {
+            window.localStorage.setItem(OPPORTUNITY_FILTERS_STORAGE_KEY, params.toString());
+        } else {
+            window.localStorage.removeItem(OPPORTUNITY_FILTERS_STORAGE_KEY);
+        }
+
         router.push(`${pathname}?${params.toString()}`);
     };
 
