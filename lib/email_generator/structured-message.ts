@@ -11,6 +11,10 @@ function cleanSentence(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function ensureSentenceEnding(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return trimmed;
@@ -23,11 +27,11 @@ function stripBulletPrefix(value: string): string {
 }
 
 function fallbackSubject(companyName: string): string {
-  return `${companyName} : quelques pistes pour aller plus loin`;
+  return `${companyName} : rendre votre site plus clair`;
 }
 
 function fallbackOutcome(companyName: string): string {
-  return `L'objectif est de faire de votre site une présence en ligne plus claire et plus crédible, à la hauteur de ${companyName}.`;
+  return `L'objectif est d'avoir une présence en ligne plus claire et plus crédible, à la hauteur de ${companyName}.`;
 }
 
 function fallbackCta(): string {
@@ -47,10 +51,34 @@ function ensureOutcomePrefix(value: string): string {
   if (!trimmed) return trimmed;
   if (/^l['’]objectif est/i.test(trimmed)) return trimmed;
   const normalized = `${trimmed.charAt(0).toLowerCase()}${trimmed.slice(1)}`;
-  if (/^(a|à|e|é|è|ê|i|î|o|ô|u|û|une|un)\b/i.test(normalized)) {
+  if (/^(une|un|des|la|le|les)\b/i.test(normalized)) {
+    return `L'objectif est d'avoir ${normalized}`;
+  }
+  if (/^(a|à|e|é|è|ê|i|î|o|ô|u|û)\b/i.test(normalized)) {
     return `L'objectif est d'${normalized}`;
   }
   return `L'objectif est de ${normalized}`;
+}
+
+function normalizeIntro(value: string, companyName: string, agencyName?: string | null): string {
+  const cleaned = ensureSentenceEnding(cleanSentence(value));
+  if (!cleaned) return fallbackIntro(agencyName);
+
+  const companyRegex = new RegExp(`^${escapeRegex(companyName)}\\b`, "i");
+  const mentionsCompanyAsSender = companyRegex.test(cleaned) && /\baccompagne\b/i.test(cleaned);
+
+  if (!agencyName?.trim()) {
+    return mentionsCompanyAsSender ? fallbackIntro(null) : cleaned;
+  }
+
+  const agencyRegex = new RegExp(`\\b${escapeRegex(agencyName.trim())}\\b`, "i");
+  const mentionsAgency = agencyRegex.test(cleaned);
+
+  if (!mentionsAgency || mentionsCompanyAsSender) {
+    return fallbackIntro(agencyName);
+  }
+
+  return cleaned;
 }
 
 export function parseStructuredEmailDraft(raw: string, companyName: string, agencyName?: string | null): StructuredEmailDraft {
@@ -94,8 +122,8 @@ export function parseStructuredEmailDraft(raw: string, companyName: string, agen
 
   return {
     subject: cleanSentence(buckets.subject.join(" ")) || fallbackSubject(companyName),
-    intro: ensureSentenceEnding(cleanSentence(buckets.intro.join(" "))) || fallbackIntro(agencyName),
-    observation: ensureSentenceEnding(cleanSentence(buckets.observation.join(" "))) || `En découvrant ${companyName}, on voit un vrai potentiel, mais le site actuel pourrait mieux mettre en valeur l'activité et structurer l'offre.`,
+    intro: normalizeIntro(cleanSentence(buckets.intro.join(" ")), companyName, agencyName),
+    observation: ensureSentenceEnding(cleanSentence(buckets.observation.join(" "))) || `En découvrant ${companyName}, on comprend bien l'activité, mais le site pourrait mieux structurer l'offre et rassurer dès le premier coup d'oeil.`,
     improvements,
     outcome: ensureSentenceEnding(ensureOutcomePrefix(cleanSentence(buckets.outcome.join(" ")))) || fallbackOutcome(companyName),
     cta: ensureSentenceEnding(cleanSentence(buckets.cta.join(" "))) || fallbackCta(),

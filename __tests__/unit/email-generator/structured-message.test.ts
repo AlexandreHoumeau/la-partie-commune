@@ -25,17 +25,34 @@ describe("parseStructuredEmailDraft", () => {
   });
 
   it("falls back when some fields are missing", () => {
-    const draft = parseStructuredEmailDraft("subject: Bonjour", "Acme");
+    const draft = parseStructuredEmailDraft("subject: Bonjour", "Acme", "Nova Studio");
 
     expect(draft.subject).toBe("Bonjour");
-    expect(draft.intro).toContain("Nous accompagnons les entreprises");
+    expect(draft.intro).toContain("Nova Studio accompagne");
     expect(draft.cta).toContain("sans engagement");
   });
 
   it("uses a less generic fallback subject when none is provided", () => {
     const draft = parseStructuredEmailDraft("intro: Bonjour", "Acme");
 
-    expect(draft.subject).toBe("Acme : quelques pistes pour aller plus loin");
+    expect(draft.subject).toBe("Acme : rendre votre site plus clair");
+  });
+
+  it("replaces an intro that mistakenly describes the prospect instead of the agency", () => {
+    const draft = parseStructuredEmailDraft(
+      [
+        "subject: Acme : rendre votre site plus clair",
+        "intro: Acme accompagne des artisans pour mettre en valeur leur expertise.",
+        "observation: En decouvrant Acme, on voit une activite serieuse, mais le site pourrait mieux refleter ce professionnalisme.",
+        "improvements: clarifier les services | mieux valoriser les realisations | rendre la prise de contact plus visible",
+        "outcome: une presence en ligne plus claire et plus credible.",
+        "cta: Si vous le souhaitez, je peux vous envoyer quelques pistes concretes, sans engagement.",
+      ].join("\n"),
+      "Acme",
+      "Atelier Voisin"
+    );
+
+    expect(draft.intro).toBe("Atelier Voisin accompagne les entreprises qui veulent créer ou faire évoluer leur site pour mieux refléter leur image, leur expertise et la qualité de leur travail.");
   });
 });
 
@@ -76,6 +93,6 @@ describe("buildStructuredEmailBody", () => {
       "Acme"
     );
 
-    expect(draft.outcome).toBe("L'objectif est d'une vitrine plus claire et plus engageante, a la hauteur de votre expertise.");
+    expect(draft.outcome).toBe("L'objectif est d'avoir une vitrine plus claire et plus engageante, a la hauteur de votre expertise.");
   });
 });

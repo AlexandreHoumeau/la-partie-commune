@@ -39,7 +39,7 @@ export const getColumns = ({
                             {initial}
                         </div>
                         <div className="flex flex-col max-w-[200px]">
-                            <Link href={`opportunities/${opportunity.slug}`} className="font-bold text-sm text-foreground hover:text-blue-600 transition-colors truncate">
+                            <Link href={`/app/opportunities/${opportunity.slug}`} className="font-bold text-sm text-foreground hover:text-blue-600 transition-colors truncate">
                                 {companyName}
                             </Link>
                             <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest truncate">
