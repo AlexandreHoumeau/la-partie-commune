@@ -15,6 +15,7 @@ import { usePathname, useRouter } from "next/navigation"
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { NotificationCenter } from "@/components/NotificationCenter"
+import { DemoBadge } from "@/components/DemoBanner"
 import { Button } from "@/components/ui/button"
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
@@ -243,7 +244,8 @@ export function AppSidebar({ isCollapsed, setIsCollapsed, isMobileOpen, setIsMob
             {/* --- USER FOOTER --- */}
             <div className="p-3 mt-auto border-t border-sidebar-border">
                 {(isMobile || !isCollapsed) && (
-                    <div className="flex justify-end mb-1 px-1">
+                    <div className="flex items-center justify-between mb-1 px-1">
+                        <DemoBadge />
                         <ThemeToggle />
                     </div>
                 )}
